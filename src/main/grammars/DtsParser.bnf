@@ -1,0 +1,28 @@
+{
+    parserClass = "me.jkdhn.devicetree.parser.DtsParser"
+    extends = "com.intellij.extapi.psi.ASTWrapperPsiElement"
+    psiClassPrefix = "Dts"
+    psiImplClassSuffix = "Impl"
+    psiPackage = "me.jkdhn.devicetree.psi"
+    psiImplPackage = "me.jkdhn.devicetree.psi.impl"
+    elementTypeHolderClass = "me.jkdhn.devicetree.psi.DtsTypes"
+    elementTypeClass = "me.jkdhn.devicetree.psi.DtsElementType"
+    tokenTypeClass = "me.jkdhn.devicetree.psi.DtsTokenType"
+}
+
+File ::= HEADER_V1 SEMICOLON Statement*
+
+private Comment ::= LINE_COMMENT | BLOCK_COMMENT
+private Directive ::= IncludeDirective
+IncludeDirective ::= INCLUDE_START DIRECTIVE_START DIRECTIVE_VALUE DIRECTIVE_END
+
+Statement ::= ((TreeNode | PropertyDefinition) SEMICOLON) | Comment | Directive
+
+TreeNode ::= ((LABEL* NODE_NAME (AT UNIT_ADDRESS)?) | REFERENCE) BRACE_LEFT Statement* BRACE_RIGHT
+
+PropertyDefinition ::= LABEL* PROPERTY_NAME (EQ PropertyValue (COMMA PropertyValue)*)?
+PropertyValue ::= LABEL* (PropertyValueCell | PropertyValueString | PropertyValueReference) LABEL*
+PropertyValueCell ::= CELL_BEGIN PropertyValueCellEntry* LABEL* CELL_END
+private PropertyValueCellEntry ::= LABEL* (LITERAL_INT | REFERENCE)
+PropertyValueString ::= LITERAL_STRING
+PropertyValueReference ::= REFERENCE

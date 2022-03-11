@@ -1,0 +1,27 @@
+<idea-plugin>
+    <id>me.jkdhn.devicetree-intellij-plugin</id>
+    <name>DeviceTree</name>
+    <vendor email="devicetree-intellij-plugin@jkdhn.me"
+        url="https://github.com/jkdhn">
+        Jack Dähn
+    </vendor>
+
+    <description><![CDATA[
+    Adds language support for DeviceTree source (.dts) files
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType name="Device Tree"
+            implementationClass="me.jkdhn.devicetree.DtsFileType"
+            fieldName="INSTANCE"
+            language="DeviceTree"
+            extensions="dts" />
+        <lang.parserDefinition language="DeviceTree"
+            implementationClass="me.jkdhn.devicetree.parser.DtsParserDefinition" />
+        <lang.syntaxHighlighterFactory language="DeviceTree"
+            implementationClass="me.jkdhn.devicetree.DtsSyntaxHighlighterFactory" />
+        <colorSettingsPage implementation="me.jkdhn.devicetree.DtsColorSettingsPage" />
+    </extensions>
+</idea-plugin>
