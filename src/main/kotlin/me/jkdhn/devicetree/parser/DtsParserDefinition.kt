@@ -9,24 +9,39 @@ import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IFileElementType
 import com.intellij.psi.tree.TokenSet
 import me.jkdhn.devicetree.DtsLanguage
-import me.jkdhn.devicetree.lexer.DtsLexerAdapter
+import me.jkdhn.devicetree.lexer.DtsLexer
+import me.jkdhn.devicetree.lexer.DtsPreLexer
 import me.jkdhn.devicetree.psi.DtsFile
+import me.jkdhn.devicetree.psi.DtsTokenType
 import me.jkdhn.devicetree.psi.DtsTypes
 
 class DtsParserDefinition : ParserDefinition {
-    private companion object {
+    companion object {
+        @JvmField
+        val LINE_COMMENT = DtsTokenType("LINE_COMMENT")
+
+        @JvmField
+        val BLOCK_COMMENT = DtsTokenType("BLOCK_COMMENT")
+
+        @JvmField
+        val PRE_INCLUDE = DtsTokenType("#include")
+
+        @JvmField
+        val PRE_HEADER = DtsTokenType("<HEADER>")
+
         val WHITE_SPACES = TokenSet.create(TokenType.WHITE_SPACE)
-        val COMMENTS = TokenSet.create(DtsTypes.LINE_COMMENT, DtsTypes.BLOCK_COMMENT)
+        val COMMENTS = TokenSet.create(LINE_COMMENT, BLOCK_COMMENT)
+        val STRINGS = TokenSet.create(DtsTypes.LITERAL_STRING)
         val FILE = IFileElementType(DtsLanguage)
     }
 
-    override fun createLexer(project: Project) = DtsLexerAdapter()
+    override fun createLexer(project: Project) = DtsPreLexer(DtsLexer())
 
     override fun getWhitespaceTokens() = WHITE_SPACES
 
     override fun getCommentTokens() = COMMENTS
 
-    override fun getStringLiteralElements(): TokenSet = TokenSet.EMPTY
+    override fun getStringLiteralElements() = STRINGS
 
     override fun createParser(project: Project) = DtsParser()
 

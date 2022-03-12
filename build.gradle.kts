@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.grammarkit.tasks.GenerateParserTask
 
 plugins {
     id("org.jetbrains.intellij") version "1.4.0"
@@ -25,11 +25,11 @@ tasks {
     generateLexer {
         source.set("src/main/grammars/DtsLexer.flex")
         targetDir.set("src/main/gen/me/jkdhn/devicetree/lexer")
-        targetClass.set("DtsLexer")
+        targetClass.set("_DtsLexer")
         purgeOldFiles.set(true)
     }
 
-    generateParser {
+    fun GenerateParserTask.setup() {
         source.set("src/main/grammars/DtsParser.bnf")
         targetRoot.set("src/main/gen")
         pathToParser.set("me/jkdhn/devicetree/parser/DtsParser.java")
@@ -37,8 +37,18 @@ tasks {
         purgeOldFiles.set(true)
     }
 
-    withType<KotlinCompile> {
-        dependsOn(generateLexer, generateParser)
+    register("generateInitialParser", GenerateParserTask::class) {
+        setup()
+        // generateParser requires compileKotlin, but compileKotlin requires the generated parser
+        // bootstrap:
+        //   * generateInitialParser (doesn't need compileKotlin)
+        //   * generateLexer
+        //   * generateParser (includes compileKotlin)
+    }
+
+    generateParser {
+        setup()
+        classpath.from(compileKotlin)
     }
 
     runIde {
@@ -47,6 +57,10 @@ tasks {
 
     patchPluginXml {
         untilBuild.set("221.*")
+    }
+
+    buildSearchableOptions {
+        enabled = false
     }
 }
 

@@ -5,7 +5,8 @@ import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.colors.TextAttributesKey.createTextAttributesKey
 import com.intellij.openapi.fileTypes.SyntaxHighlighterBase
 import com.intellij.psi.tree.IElementType
-import me.jkdhn.devicetree.lexer.DtsLexerAdapter
+import me.jkdhn.devicetree.lexer.DtsLexer
+import me.jkdhn.devicetree.parser.DtsParserDefinition
 import me.jkdhn.devicetree.psi.DtsTypes
 
 class DtsSyntaxHighlighter : SyntaxHighlighterBase() {
@@ -36,22 +37,21 @@ class DtsSyntaxHighlighter : SyntaxHighlighterBase() {
         val EMPTY_KEYS = arrayOf<TextAttributesKey>()
     }
 
-    override fun getHighlightingLexer() = DtsLexerAdapter()
+    override fun getHighlightingLexer() = DtsLexer()
 
     override fun getTokenHighlights(tokenType: IElementType): Array<TextAttributesKey> {
         return when (tokenType) {
             DtsTypes.HEADER_V1 -> HEADER_KEYS
-            DtsTypes.INCLUDE_START, DtsTypes.DIRECTIVE_START,
-            DtsTypes.DIRECTIVE_VALUE, DtsTypes.DIRECTIVE_END -> MACRO_KEYS
             DtsTypes.SEMICOLON -> SEMICOLON_KEYS
-            DtsTypes.LABEL -> LABEL_KEYS
+            DtsTypes.LABEL_NAME -> LABEL_KEYS
             DtsTypes.NODE_NAME -> NODE_NAME_KEYS
             DtsTypes.PROPERTY_NAME -> PROPERTY_NAME_KEYS
             DtsTypes.BRACE_LEFT, DtsTypes.BRACE_RIGHT -> BRACES_KEYS
-            DtsTypes.LINE_COMMENT -> LINE_COMMENT_KEYS
-            DtsTypes.BLOCK_COMMENT -> BLOCK_COMMENT_KEYS
+            DtsParserDefinition.LINE_COMMENT -> LINE_COMMENT_KEYS
+            DtsParserDefinition.BLOCK_COMMENT -> BLOCK_COMMENT_KEYS
+            DtsParserDefinition.PRE_HEADER, DtsParserDefinition.PRE_INCLUDE -> MACRO_KEYS
             DtsTypes.LITERAL_STRING -> STRING_KEYS
-            DtsTypes.LITERAL_INT, DtsTypes.AT, DtsTypes.UNIT_ADDRESS -> NUMBER_KEYS
+            DtsTypes.CELL_INT, DtsTypes.AT, DtsTypes.UNIT_ADDRESS -> NUMBER_KEYS
             else -> EMPTY_KEYS
         }
     }

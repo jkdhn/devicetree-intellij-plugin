@@ -22,6 +22,10 @@
             implementationClass="me.jkdhn.devicetree.parser.DtsParserDefinition" />
         <lang.syntaxHighlighterFactory language="DeviceTree"
             implementationClass="me.jkdhn.devicetree.DtsSyntaxHighlighterFactory" />
+        <lang.findUsagesProvider language="DeviceTree"
+            implementationClass="me.jkdhn.devicetree.DtsFindUsagesProvider" />
+        <lang.refactoringSupport language="DeviceTree"
+            implementationClass="me.jkdhn.devicetree.DtsRefactoringSupportProvider" />
         <colorSettingsPage implementation="me.jkdhn.devicetree.DtsColorSettingsPage" />
     </extensions>
 </idea-plugin>
