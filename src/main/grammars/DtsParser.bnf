@@ -13,6 +13,18 @@
     tokens = [
         HEADER_V1 = "/dts-v1/"
         SEMICOLON = ";"
+        PRE_IF = "#if"
+        PRE_IFDEF = "#ifdef"
+        PRE_IFNDEF = "#ifndef"
+        PRE_ELIF = "#elif"
+        PRE_ELSE = "#else"
+        PRE_ENDIF = "#endif"
+        PRE_INCLUDE = "#include"
+        PRE_DEFINE = "#define"
+        PRE_UNDEF = "#undef"
+        PRE_LINE = "#line"
+        PRE_ERROR = "#error"
+        PRE_PRAGMA = "#pragma"
     ]
 }
 

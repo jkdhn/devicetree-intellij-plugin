@@ -8,7 +8,8 @@ class DtsColorSettingsPage : ColorSettingsPage {
     private companion object {
         val DESCRIPTORS = arrayOf(
             AttributesDescriptor("Header", DtsSyntaxHighlighter.HEADER),
-            AttributesDescriptor("Macro", DtsSyntaxHighlighter.MACRO),
+            AttributesDescriptor("Preprocessor directive", DtsSyntaxHighlighter.PREPROCESSOR_DIRECTIVE),
+            AttributesDescriptor("Non-compiled code", DtsSyntaxHighlighter.DISABLED_BRANCH),
             AttributesDescriptor("Semicolon", DtsSyntaxHighlighter.SEMICOLON),
             AttributesDescriptor("Label", DtsSyntaxHighlighter.LABEL),
             AttributesDescriptor("Node name", DtsSyntaxHighlighter.NODE_NAME),
@@ -23,7 +24,7 @@ class DtsColorSettingsPage : ColorSettingsPage {
 
     override fun getIcon() = DtsFileType.icon
 
-    override fun getHighlighter() = DtsSyntaxHighlighter()
+    override fun getHighlighter() = DtsSyntaxHighlighter(null, null)
 
     override fun getDemoText(): String {
         return """

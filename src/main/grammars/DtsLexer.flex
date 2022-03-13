@@ -1,9 +1,12 @@
 package me.jkdhn.devicetree.lexer;
 
 import com.intellij.lexer.FlexLexer;
-import com.intellij.psi.tree.IElementType;
-import me.jkdhn.devicetree.parser.DtsParserDefinition;import me.jkdhn.devicetree.psi.DtsTypes;
 import com.intellij.psi.TokenType;
+import com.intellij.psi.tree.IElementType;
+import me.jkdhn.devicetree.parser.DtsParserDefinition;
+import me.jkdhn.devicetree.psi.DtsTypes;
+import me.jkdhn.devicetree.psi.DtsPreTypes;
+import java.util.Stack;
 
 %%
 
@@ -14,16 +17,23 @@ import com.intellij.psi.TokenType;
 %type IElementType
 
 %{
-  private int zzOldState;
-  private int zzRefState;
-  private int zzPreState;
+  private final Stack<Integer> zzStack = new Stack<>();
+
+  private void yycall(int state) {
+      zzStack.push(yystate());
+      yybegin(state);
+  }
+
+  private void yyreturn() {
+      yybegin(zzStack.pop());
+  }
 %}
 
 HEADER_V1 = "/dts-v1/"
 
-WHITE_SPACE_EOL=\n | \r\n
-WHITE_SPACE_INLINE=\  | \t
-WHITE_SPACE_ANY={WHITE_SPACE_EOL} | {WHITE_SPACE_INLINE}
+EOL=\n | \r\n
+WS=\  | \t
+WHITE_SPACE_ANY={EOL} | {WS}
 WHITE_SPACE={WHITE_SPACE_ANY}+
 
 LITERAL_INT = {LITERAL_INT_DEF} | {LITERAL_INT_BIN} | {LITERAL_INT_HEX}
@@ -43,9 +53,24 @@ PROPERTY_NAME = [0-9a-zA-Z,._+?#-]{1,31}
 
 ANY = [0-9a-zA-Z,._+?#\s@-]*
 
+PRE = {WS}* "#" {WS}*
+PRE_END = ([^a-z_] .* \R) | \R
+
+PRE_IF      = {PRE} "if"
+PRE_IFDEF   = {PRE} "ifdef"
+PRE_IFNDEF  = {PRE} "ifndef"
+PRE_ELIF    = {PRE} "elif"
+PRE_ELSE    = {PRE} "else"
+PRE_ENDIF   = {PRE} "endif"
+PRE_INCLUDE = {PRE} "include"
+PRE_DEFINE  = {PRE} "define"
+PRE_UNDEF   = {PRE} "undef"
+PRE_LINE    = {PRE} "line"
+PRE_ERROR   = {PRE} "error"
+PRE_PRAGMA  = {PRE} "pragma"
+
 %xstate PREPROCESSOR_DIRECTIVE
-%xstate PREPROCESSOR_VALUE
-%state BLOCK_COMMENT
+%xstate BLOCK_COMMENT
 %state REFERENCE
 %state NODE_NAME
 %state UNIT_ADDRESS
@@ -54,33 +79,35 @@ ANY = [0-9a-zA-Z,._+?#\s@-]*
 
 %%
 
-    ^ "#" .* \R                     { zzPreState = yystate(); yybegin(PREPROCESSOR_DIRECTIVE); yypushback(yylength()); }
     "//" .* \R                      { return DtsParserDefinition.LINE_COMMENT; }
-    "/*"                            { zzOldState = yystate(); yybegin(BLOCK_COMMENT); }
+    "/*"                            { yycall(BLOCK_COMMENT); }
+
+    ^ {PRE_IF}      / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.IF; }
+    ^ {PRE_IFDEF}   / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.IFDEF; }
+    ^ {PRE_IFNDEF}  / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.IFNDEF; }
+    ^ {PRE_ELIF}    / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.ELIF; }
+    ^ {PRE_ELSE}    / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.ELSE; }
+    ^ {PRE_ENDIF}   / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.ENDIF; }
+    ^ {PRE_INCLUDE} / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.INCLUDE; }
+    ^ {PRE_DEFINE}  / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.DEFINE; }
+    ^ {PRE_UNDEF}   / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.UNDEF; }
+    ^ {PRE_LINE}    / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.LINE; }
+    ^ {PRE_ERROR}   / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.ERROR; }
+    ^ {PRE_PRAGMA}  / {PRE_END}     { yycall(PREPROCESSOR_DIRECTIVE); return DtsPreTypes.PRAGMA; }
 
 <PREPROCESSOR_DIRECTIVE> {
-    "#include"                      { yybegin(PREPROCESSOR_VALUE); return DtsParserDefinition.PRE_INCLUDE; }
-    "# " .*                         { return DtsParserDefinition.LINE_COMMENT; }
-    \n                              { yybegin(zzPreState); return TokenType.WHITE_SPACE; }
-    [^]                             { return TokenType.BAD_CHARACTER; }
-}
-
-<PREPROCESSOR_VALUE> {
-    \< [^\n>]+  \>                  { return DtsParserDefinition.PRE_HEADER; }
-    \" [^\n\"]+ \"                  { return DtsParserDefinition.PRE_HEADER; }
-    {WHITE_SPACE_INLINE}+           { return TokenType.WHITE_SPACE; }
-    \n                              { yybegin(zzPreState); return TokenType.WHITE_SPACE; }
-    [^]                             { return TokenType.BAD_CHARACTER; }
+    ([^\n] | (\\ \n))+              { return DtsPreTypes.CONTENT; }
+    \n                              { yyreturn(); return DtsPreTypes.END; }
 }
 
 <BLOCK_COMMENT> {
-    "*/"                            { yybegin(zzOldState); return DtsParserDefinition.BLOCK_COMMENT; }
+    "*/"                            { yyreturn(); return DtsParserDefinition.BLOCK_COMMENT; }
     [^]                             { }
 }
 
 <REFERENCE> {
     {LABEL_NAME}                    { return DtsTypes.LABEL_NAME; }
-    [^]                             { yybegin(zzRefState); yypushback(1); }
+    [^]                             { yyreturn(); yypushback(1); }
 }
 
 <YYINITIAL> {
@@ -89,7 +116,7 @@ ANY = [0-9a-zA-Z,._+?#\s@-]*
     "}"                             { return DtsTypes.BRACE_RIGHT; }
     ";"                             { return DtsTypes.SEMICOLON; }
     "="                             { yybegin(VALUE); return DtsTypes.EQ; }
-    "&"                             { zzRefState = yystate(); yybegin(REFERENCE); return DtsTypes.AMPERSAND; }
+    "&"                             { yycall(REFERENCE); return DtsTypes.AMPERSAND; }
     ":"                             { return DtsTypes.COLON; }
     {NODE_NAME} / {ANY} "{"         { yybegin(NODE_NAME); return DtsTypes.NODE_NAME; }
     {PROPERTY_NAME} / {ANY} [=;]    { return DtsTypes.PROPERTY_NAME; }
@@ -113,7 +140,7 @@ ANY = [0-9a-zA-Z,._+?#\s@-]*
     ","                             { return DtsTypes.COMMA; }
     "<"                             { yybegin(CELL); return DtsTypes.CELL_BEGIN; }
     ";"                             { yybegin(YYINITIAL); return DtsTypes.SEMICOLON; }
-    "&"                             { zzRefState = yystate(); yybegin(REFERENCE); return DtsTypes.AMPERSAND; }
+    "&"                             { yycall(REFERENCE); return DtsTypes.AMPERSAND; }
     ":"                             { return DtsTypes.COLON; }
     {LABEL_NAME} / ":"              { return DtsTypes.LABEL_NAME; }
     {WHITE_SPACE}                   { return TokenType.WHITE_SPACE; }
