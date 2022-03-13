@@ -2,16 +2,18 @@ package me.jkdhn.devicetree.parser
 
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ParserDefinition
+import com.intellij.lexer.Lexer
 import com.intellij.openapi.project.Project
 import com.intellij.psi.FileViewProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IFileElementType
 import com.intellij.psi.tree.TokenSet
-import me.jkdhn.devicetree.DtsLanguage
 import me.jkdhn.devicetree.lexer.DtsLexer
 import me.jkdhn.devicetree.lexer.DtsPreLexer
+import me.jkdhn.devicetree.psi.DtsElementFactory
 import me.jkdhn.devicetree.psi.DtsFile
+import me.jkdhn.devicetree.psi.DtsFileElementType
 import me.jkdhn.devicetree.psi.DtsTokenType
 import me.jkdhn.devicetree.psi.DtsTypes
 
@@ -29,13 +31,19 @@ class DtsParserDefinition : ParserDefinition {
         @JvmField
         val PRE_HEADER = DtsTokenType("<HEADER>")
 
-        val WHITE_SPACES = TokenSet.create(TokenType.WHITE_SPACE)
+        @JvmField
+        val HEADER = DtsTokenType("[HEADER]")
+
+        val WHITE_SPACES = TokenSet.create(TokenType.WHITE_SPACE, HEADER)
         val COMMENTS = TokenSet.create(LINE_COMMENT, BLOCK_COMMENT)
         val STRINGS = TokenSet.create(DtsTypes.LITERAL_STRING)
-        val FILE = IFileElementType(DtsLanguage)
+        val FILE = DtsFileElementType()
     }
 
-    override fun createLexer(project: Project) = DtsPreLexer(DtsLexer())
+    override fun createLexer(project: Project): Lexer {
+        val file = DtsElementFactory.createDummyFile(project, "")
+        return DtsPreLexer(file, DtsLexer())
+    }
 
     override fun getWhitespaceTokens() = WHITE_SPACES
 

@@ -7,11 +7,11 @@ import com.intellij.psi.util.PsiTreeUtil
 import me.jkdhn.devicetree.DtsFileType
 
 object DtsElementFactory {
-    fun createFile(project: Project, text: String) =
+    fun createDummyFile(project: Project, text: String) =
         PsiFileFactory.getInstance(project).createFileFromText("dummy.dts", DtsFileType, text) as DtsFile
 
     fun createLabelReference(project: Project, name: String): DtsLabelReference {
-        val file = createFile(project, "/dts-v1/; &$name {};")
+        val file = createDummyFile(project, "/dts-v1/; &$name {};")
         return PsiTreeUtil.findChildOfType(file, DtsLabelReference::class.java)!!
     }
 

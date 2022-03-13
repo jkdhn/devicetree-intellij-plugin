@@ -7,7 +7,6 @@ import com.intellij.psi.TokenType;
 
 %%
 
-%public
 %class _DtsLexer
 %implements FlexLexer
 %unicode

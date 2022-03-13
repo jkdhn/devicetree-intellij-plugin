@@ -9,15 +9,16 @@
     elementTypeClass = "me.jkdhn.devicetree.psi.DtsElementType"
     tokenTypeClass = "me.jkdhn.devicetree.psi.DtsTokenType"
     psiImplUtilClass = "me.jkdhn.devicetree.psi.impl.DtsPsiImplUtil"
+    parserUtilClass = "me.jkdhn.devicetree.parser.DtsParserUtil"
     tokens = [
         HEADER_V1 = "/dts-v1/"
         SEMICOLON = ";"
     ]
 }
 
-File ::= HEADER_V1 SEMICOLON Statement*
+File ::= Statement*
 
-Statement ::= ((TreeNode | PropertyDefinition) SEMICOLON)
+Statement ::= ((HEADER_V1 | TreeNode | PropertyDefinition) SEMICOLON)
 
 LabelDefinition ::= LABEL_NAME COLON {
     mixin = "me.jkdhn.devicetree.psi.impl.DtsNamedElementImpl"

@@ -17,7 +17,7 @@
             implementationClass="me.jkdhn.devicetree.DtsFileType"
             fieldName="INSTANCE"
             language="DeviceTree"
-            extensions="dts" />
+            extensions="dts;dtsi" />
         <lang.parserDefinition language="DeviceTree"
             implementationClass="me.jkdhn.devicetree.parser.DtsParserDefinition" />
         <lang.syntaxHighlighterFactory language="DeviceTree"
