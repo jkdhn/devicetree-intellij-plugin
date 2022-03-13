@@ -10,10 +10,12 @@ import me.jkdhn.devicetree.parser.DtsParserDefinition.Companion.PREPROCESSOR_DIR
 import me.jkdhn.devicetree.preprocessor.PreContext
 import me.jkdhn.devicetree.psi.DtsFile
 import me.jkdhn.devicetree.psi.DtsIncludeType
+import me.jkdhn.devicetree.psi.DtsMacroType
 import me.jkdhn.devicetree.psi.DtsPreErrorType
 import me.jkdhn.devicetree.psi.DtsPreErrorTypes
 import me.jkdhn.devicetree.psi.DtsPreType
 import me.jkdhn.devicetree.psi.DtsPreTypes
+import me.jkdhn.devicetree.psi.DtsTypes
 
 class DtsPreLexer(
     private val file: DtsFile?,
@@ -24,6 +26,8 @@ class DtsPreLexer(
         val type = baseLexer.tokenType
         if (type is DtsPreType) {
             handle(baseLexer, type)
+        } else if (type == DtsTypes.IDENTIFIER) {
+            handleIdentifier(baseLexer)
         } else {
             super.lookAhead(baseLexer)
         }
@@ -65,6 +69,30 @@ class DtsPreLexer(
         if (baseLexer.tokenType == DtsPreTypes.END) {
             advanceAs(baseLexer, TokenType.WHITE_SPACE)
         }
+    }
+
+    private fun handleIdentifier(baseLexer: Lexer) {
+        val text = baseLexer.tokenText
+        if (!context.isDefined(text)) {
+            advanceLexer(baseLexer)
+            return
+        }
+
+        val value = context.getDefine(text).orEmpty()
+
+        val subLexer = DtsFlexLexer()
+        subLexer.start(value)
+
+        while (true) {
+            val type = subLexer.tokenType
+                ?: break
+
+            addToken(baseLexer.tokenStart, DtsMacroType(type, subLexer.tokenText))
+
+            subLexer.advance()
+        }
+
+        advanceAs(baseLexer, PREPROCESSOR_DIRECTIVE)
     }
 
     private fun skipUntil(baseLexer: Lexer, vararg until: IElementType) {

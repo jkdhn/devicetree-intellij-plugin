@@ -16,4 +16,8 @@ class PreContext {
     fun isDefined(key: String): Boolean {
         return defines.containsKey(key)
     }
+
+    fun getDefine(key: String): String? {
+        return defines[key]
+    }
 }

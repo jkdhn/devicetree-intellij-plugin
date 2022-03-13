@@ -27,7 +27,7 @@ INTEGER = ([0-9]+) | ("0b" [01]+) | ("0x" [0-9a-fA-F]+)
 
 STRING = \" ( [^\\\"] | (\\ [^]) )* \"
 
-IDENTIFIER = [0-9a-zA-Z#?@,._+-]*
+IDENTIFIER = [0-9a-zA-Z#?@,._+-]+
 
 PRE = {WS}* "#" {WS}*
 PRE_END = ([^a-z_] .* \R) | \R
