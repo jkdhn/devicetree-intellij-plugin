@@ -1,0 +1,28 @@
+name: Build
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-java@v2
+      with:
+        distribution: temurin
+        java-version: 11
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+    - name: Bootstrap parser
+      run: ./gradlew generateInitialParser
+    - name: Generate lexer
+      run: ./gradlew generateLexer
+    - name: Generate parser
+      run: ./gradlew generateParser
+    - name: Build plugin
+      run: ./gradlew buildPlugin
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: plugin
+        path: build/libs/*.jar
