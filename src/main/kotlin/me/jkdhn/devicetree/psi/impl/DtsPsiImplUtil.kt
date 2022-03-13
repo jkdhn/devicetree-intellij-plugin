@@ -1,5 +1,8 @@
+@file:JvmName("DtsPsiImplUtil")
+
 package me.jkdhn.devicetree.psi.impl
 
+import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import me.jkdhn.devicetree.DtsReference
 import me.jkdhn.devicetree.psi.DtsElementFactory
@@ -7,29 +10,25 @@ import me.jkdhn.devicetree.psi.DtsLabelDefinition
 import me.jkdhn.devicetree.psi.DtsLabelReference
 import me.jkdhn.devicetree.psi.DtsTypes
 
-object DtsPsiImplUtil {
-    private fun getLabelName(element: PsiElement) =
-        element.node.findChildByType(DtsTypes.LABEL_NAME)
+private fun getIdentifier(element: PsiElement): ASTNode? =
+    element.node.findChildByType(DtsTypes.IDENTIFIER)
 
-    @JvmStatic
-    fun getName(element: DtsLabelDefinition): String? = getLabelName(element)?.text
+fun getNameIdentifier(element: DtsLabelDefinition): PsiElement? =
+    getIdentifier(element)?.psi
 
-    @JvmStatic
-    fun setName(element: DtsLabelDefinition, name: String): PsiElement {
-        val oldName = getLabelName(element)
-        if (oldName != null) {
-            val newName = DtsElementFactory.createLabelName(element.project, name).node
-            element.node.replaceChild(oldName, newName)
-        }
-        return element
+fun getName(element: DtsLabelDefinitionImpl): String? =
+    getIdentifier(element)?.text
+
+fun setName(element: DtsLabelDefinition, name: String): PsiElement {
+    val oldName = getIdentifier(element)
+    if (oldName != null) {
+        val newName = DtsElementFactory.createIdentifier(element.project, name).node
+        element.node.replaceChild(oldName, newName)
     }
+    return element
+}
 
-    @JvmStatic
-    fun getNameIdentifier(element: DtsLabelDefinition): PsiElement? = getLabelName(element)?.psi
-
-    @JvmStatic
-    fun getReference(reference: DtsLabelReference): DtsReference? {
-        val name = getLabelName(reference)?.psi ?: return null
-        return DtsReference(reference, name.textRangeInParent)
-    }
+fun getReference(element: DtsLabelReference): DtsReference? {
+    val name = getIdentifier(element)?.psi ?: return null
+    return DtsReference(element, name.textRangeInParent)
 }

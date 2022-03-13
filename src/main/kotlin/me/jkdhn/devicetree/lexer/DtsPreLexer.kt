@@ -19,7 +19,7 @@ class DtsPreLexer(
     private val file: DtsFile?,
     private val context: PreContext = PreContext(),
     private val depth: Int = 0
-) : LookAheadLexer(DtsLexer()) {
+) : LookAheadLexer(DtsFlexLexer()) {
     override fun lookAhead(baseLexer: Lexer) {
         val type = baseLexer.tokenType
         if (type is DtsPreType) {

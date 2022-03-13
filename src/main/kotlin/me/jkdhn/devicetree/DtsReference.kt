@@ -27,7 +27,7 @@ class DtsReference(
 
     override fun handleElementRename(newElementName: String): PsiElement {
         val oldName = element.lastChild
-        val newName = DtsElementFactory.createLabelName(element.project, newElementName)
+        val newName = DtsElementFactory.createIdentifier(element.project, newElementName)
         element.node.replaceChild(oldName.node, newName.node)
         return element
     }

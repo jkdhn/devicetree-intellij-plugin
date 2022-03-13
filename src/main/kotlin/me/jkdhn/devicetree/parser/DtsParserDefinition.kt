@@ -2,6 +2,7 @@ package me.jkdhn.devicetree.parser
 
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ParserDefinition
+import com.intellij.lang.ParserDefinition.SpaceRequirements
 import com.intellij.lexer.Lexer
 import com.intellij.openapi.project.Project
 import com.intellij.psi.FileViewProvider
@@ -9,7 +10,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IFileElementType
 import com.intellij.psi.tree.TokenSet
-import me.jkdhn.devicetree.lexer.DtsPreLexer
+import me.jkdhn.devicetree.lexer.DtsLexer
 import me.jkdhn.devicetree.psi.DtsElementFactory
 import me.jkdhn.devicetree.psi.DtsFile
 import me.jkdhn.devicetree.psi.DtsFileElementType
@@ -32,13 +33,13 @@ class DtsParserDefinition : ParserDefinition {
 
         val WHITE_SPACES = TokenSet.create(TokenType.WHITE_SPACE)
         val COMMENTS = TokenSet.create(LINE_COMMENT, BLOCK_COMMENT, DISABLED_BRANCH, PREPROCESSOR_DIRECTIVE)
-        val STRINGS = TokenSet.create(DtsTypes.LITERAL_STRING)
+        val STRINGS = TokenSet.create(DtsTypes.STRING)
         val FILE = DtsFileElementType()
     }
 
     override fun createLexer(project: Project): Lexer {
         val file = DtsElementFactory.createDummyFile(project, "")
-        return DtsPreLexer(file)
+        return DtsLexer(file)
     }
 
     override fun getWhitespaceTokens() = WHITE_SPACES
@@ -53,8 +54,11 @@ class DtsParserDefinition : ParserDefinition {
 
     override fun createFile(viewProvider: FileViewProvider) = DtsFile(viewProvider)
 
-    override fun spaceExistenceTypeBetweenTokens(left: ASTNode, right: ASTNode): ParserDefinition.SpaceRequirements {
-        return ParserDefinition.SpaceRequirements.MAY
+    override fun spaceExistenceTypeBetweenTokens(left: ASTNode, right: ASTNode): SpaceRequirements {
+        if (left.elementType == DtsTypes.IDENTIFIER && right.elementType == DtsTypes.COLON) {
+            return SpaceRequirements.MUST_NOT
+        }
+        return SpaceRequirements.MAY
     }
 
     override fun createElement(node: ASTNode): PsiElement {

@@ -12,19 +12,24 @@
     parserUtilClass = "me.jkdhn.devicetree.parser.DtsParserUtil"
     tokens = [
         HEADER_V1 = "/dts-v1/"
+        BRACE_LEFT = "{"
+        BRACE_RIGHT = "}"
+        PAR_LEFT = "("
+        PAR_RIGHT = ")"
+        LT = "<"
+        GT = ">"
         SEMICOLON = ";"
-        PRE_IF = "#if"
-        PRE_IFDEF = "#ifdef"
-        PRE_IFNDEF = "#ifndef"
-        PRE_ELIF = "#elif"
-        PRE_ELSE = "#else"
-        PRE_ENDIF = "#endif"
-        PRE_INCLUDE = "#include"
-        PRE_DEFINE = "#define"
-        PRE_UNDEF = "#undef"
-        PRE_LINE = "#line"
-        PRE_ERROR = "#error"
-        PRE_PRAGMA = "#pragma"
+        AT = "@"
+        EQ = "="
+        AMPERSAND = "&"
+        COLON = ":"
+        ADD = "+"
+        SUB = "-"
+        MUL = "*"
+        SLASH = "/"
+        STRING = "<string>"
+        INTEGER = "<int>"
+        IDENTIFIER = "<identifier>"
     ]
 }
 
@@ -32,7 +37,7 @@ File ::= Statement*
 
 Statement ::= ((HEADER_V1 | TreeNode | PropertyDefinition) SEMICOLON)
 
-LabelDefinition ::= LABEL_NAME COLON {
+LabelDefinition ::= IDENTIFIER COLON {
     mixin = "me.jkdhn.devicetree.psi.impl.DtsNamedElementImpl"
     implements = "me.jkdhn.devicetree.psi.DtsNamedElement"
     methods = [
@@ -42,18 +47,18 @@ LabelDefinition ::= LABEL_NAME COLON {
     ]
 }
 
-LabelReference ::= AMPERSAND LABEL_NAME {
+LabelReference ::= AMPERSAND IDENTIFIER {
     methods = [
         getReference
     ]
 }
 
 TreeNode ::= ((LabelDefinition* TreeNodeName) | LabelReference) BRACE_LEFT Statement* BRACE_RIGHT
-TreeNodeName ::= NODE_NAME (AT UNIT_ADDRESS)?
+TreeNodeName ::= IDENTIFIER | SLASH
 
-PropertyDefinition ::= LabelDefinition* PROPERTY_NAME (EQ PropertyValue (COMMA PropertyValue)*)?
-PropertyValue ::= LabelDefinition* (PropertyValueCell | LITERAL_STRING | LabelReference) LabelDefinition*
-PropertyValueCell ::= CELL_BEGIN PropertyValueCellEntry* LabelDefinition* CELL_END
+PropertyDefinition ::= LabelDefinition* IDENTIFIER (EQ PropertyValue (COMMA PropertyValue)*)?
+PropertyValue ::= LabelDefinition* (PropertyValueCell | STRING | LabelReference) LabelDefinition*
+PropertyValueCell ::= LT PropertyValueCellEntry* LabelDefinition* GT
 private PropertyValueCellEntry ::= LabelDefinition* (LabelReference | PropertyValueExpression)
-PropertyValueExpression ::= CELL_INT | (PAR_LEFT CELL_INT PAR_RIGHT) | (PAR_LEFT PropertyValueExpression PropertyValueOperator PropertyValueExpression PAR_RIGHT)
-PropertyValueOperator ::= CELL_ADD | CELL_SUB | CELL_MUL | CELL_DIV
+PropertyValueExpression ::= INTEGER | (PAR_LEFT INTEGER PAR_RIGHT) | (PAR_LEFT PropertyValueExpression PropertyValueOperator PropertyValueExpression PAR_RIGHT)
+PropertyValueOperator ::= ADD | SUB | MUL | SLASH

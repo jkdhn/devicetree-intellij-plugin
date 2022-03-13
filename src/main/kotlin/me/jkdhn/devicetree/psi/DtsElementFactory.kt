@@ -10,12 +10,12 @@ object DtsElementFactory {
     fun createDummyFile(project: Project, text: String) =
         PsiFileFactory.getInstance(project).createFileFromText("dummy.dts", DtsFileType, text) as DtsFile
 
-    fun createLabelReference(project: Project, name: String): DtsLabelReference {
-        val file = createDummyFile(project, "/dts-v1/; &$name {};")
-        return PsiTreeUtil.findChildOfType(file, DtsLabelReference::class.java)!!
+    private fun createLabelDefinition(project: Project, name: String): DtsLabelDefinition {
+        val file = createDummyFile(project, "/dts-v1/; $name: / {};")
+        return PsiTreeUtil.findChildOfType(file, DtsLabelDefinition::class.java)!!
     }
 
-    fun createLabelName(project: Project, name: String): PsiElement {
-        return createLabelReference(project, name).node.findChildByType(DtsTypes.LABEL_NAME)!!.psi
+    fun createIdentifier(project: Project, name: String): PsiElement {
+        return createLabelDefinition(project, name).node.findChildByType(DtsTypes.IDENTIFIER)!!.psi
     }
 }

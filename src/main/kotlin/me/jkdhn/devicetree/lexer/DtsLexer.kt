@@ -1,5 +1,6 @@
 package me.jkdhn.devicetree.lexer
 
-import com.intellij.lexer.FlexAdapter
+import com.intellij.lexer.DelegateLexer
+import me.jkdhn.devicetree.psi.DtsFile
 
-class DtsLexer : FlexAdapter(_DtsLexer(null))
+class DtsLexer(file: DtsFile?) : DelegateLexer(DtsPreLexer(file))

@@ -24,7 +24,7 @@ class DtsColorSettingsPage : ColorSettingsPage {
 
     override fun getIcon() = DtsFileType.icon
 
-    override fun getHighlighter() = DtsSyntaxHighlighter(null, null)
+    override fun getHighlighter() = DtsSyntaxHighlighter()
 
     override fun getDemoText(): String {
         return """
@@ -54,6 +54,12 @@ class DtsColorSettingsPage : ColorSettingsPage {
                     label = "Child node";
                 };
             };
+
+            #ifdef DEBUG
+            &uart0 {
+                status = "okay";
+            };
+            #endif
         """.trimIndent()
     }
 

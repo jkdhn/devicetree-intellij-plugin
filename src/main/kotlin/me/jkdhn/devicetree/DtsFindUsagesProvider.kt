@@ -6,7 +6,7 @@ import com.intellij.lang.findUsages.FindUsagesProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.tree.TokenSet
-import me.jkdhn.devicetree.lexer.DtsPreLexer
+import me.jkdhn.devicetree.lexer.DtsLexer
 import me.jkdhn.devicetree.psi.DtsLabelDefinition
 import me.jkdhn.devicetree.psi.DtsTypes
 import me.jkdhn.devicetree.psi.impl.DtsLabelDefinitionImpl
@@ -14,7 +14,7 @@ import me.jkdhn.devicetree.psi.impl.DtsLabelDefinitionImpl
 class DtsFindUsagesProvider : FindUsagesProvider {
     override fun getWordsScanner(): WordsScanner {
         return DefaultWordsScanner(
-            DtsPreLexer(null),
+            DtsLexer(null),
             TokenSet.create(DtsTypes.LABEL_REFERENCE),
             TokenSet.EMPTY,
             TokenSet.EMPTY
