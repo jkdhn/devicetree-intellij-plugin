@@ -62,3 +62,20 @@ PropertyValueCell ::= LT PropertyValueCellEntry* LabelDefinition* GT
 private PropertyValueCellEntry ::= LabelDefinition* (LabelReference | PropertyValueExpression)
 PropertyValueExpression ::= INTEGER | (PAR_LEFT INTEGER PAR_RIGHT) | (PAR_LEFT PropertyValueExpression PropertyValueOperator PropertyValueExpression PAR_RIGHT)
 PropertyValueOperator ::= ADD | SUB | MUL | SLASH
+
+//noinspection BnfUnusedRule
+private PreMarker ::= PreMarkerDefine | PreMarkerMacro
+PreMarkerDefine ::= PRE_DEFINE_MARKER {
+    mixin = "me.jkdhn.devicetree.psi.impl.DtsNamedElementImpl"
+    implements = "me.jkdhn.devicetree.psi.DtsNamedElement"
+    methods = [
+        getNameIdentifier
+        getName
+        setName
+    ]
+}
+PreMarkerMacro ::= PRE_MACRO_MARKER {
+    methods = [
+        getReference
+    ]
+}

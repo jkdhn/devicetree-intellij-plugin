@@ -6,9 +6,10 @@ import com.intellij.lang.PsiParser
 import com.intellij.lang.parser.GeneratedParserUtilBase
 import com.intellij.psi.tree.IElementType
 import me.jkdhn.devicetree.psi.DtsIncludeType
+import me.jkdhn.devicetree.psi.DtsPreReferenceType
 import me.jkdhn.devicetree.psi.DtsMacroType
 
-class DtsBuilderAdapter(
+open class DtsBuilderAdapter(
     builder: PsiBuilder, state: GeneratedParserUtilBase.ErrorState, parser: PsiParser
 ) : GeneratedParserUtilBase.Builder(builder, state, parser) {
     private fun unwrap(type: IElementType?): IElementType? {
@@ -19,12 +20,16 @@ class DtsBuilderAdapter(
     }
 
     override fun getTokenType(): IElementType? {
-        var type = unwrap(super.getTokenType())
+        var type = getInternalTokenType()
         while (type in DtsParserDefinition.WHITE_SPACES || type in DtsParserDefinition.COMMENTS) {
             advanceLexer()
-            type = unwrap(super.getTokenType())
+            type = getInternalTokenType()
         }
         return type
+    }
+
+    protected open fun getInternalTokenType(): IElementType? {
+        return unwrap(super.getTokenType())
     }
 
     override fun getTokenText(): String? {
@@ -39,6 +44,7 @@ class DtsBuilderAdapter(
         when (val old = super.getTokenType()) {
             is DtsIncludeType -> super.remapCurrentToken(DtsIncludeType(type, old.value))
             is DtsMacroType -> super.remapCurrentToken(DtsMacroType(type, old.value))
+            is DtsPreReferenceType -> super.remapCurrentToken(DtsPreReferenceType(type, old.value))
             else -> super.remapCurrentToken(type)
         }
     }

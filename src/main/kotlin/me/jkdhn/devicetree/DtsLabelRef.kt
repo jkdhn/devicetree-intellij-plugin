@@ -8,7 +8,7 @@ import me.jkdhn.devicetree.psi.DtsElementFactory
 import me.jkdhn.devicetree.psi.DtsLabelDefinition
 import me.jkdhn.devicetree.psi.DtsLabelReference
 
-class DtsReference(
+class DtsLabelRef(
     private val element: DtsLabelReference, range: TextRange?
 ) : PsiReferenceBase<DtsLabelReference>(element, range) {
     override fun resolve(): PsiElement? {
@@ -33,6 +33,6 @@ class DtsReference(
     }
 
     override fun toString(): String {
-        return "DtsReference -> ${rangeInElement.substring(element.text)}"
+        return "DtsLabelReference -> ${rangeInElement.substring(element.text)}"
     }
 }

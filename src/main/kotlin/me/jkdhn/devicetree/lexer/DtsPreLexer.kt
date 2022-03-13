@@ -13,6 +13,7 @@ import me.jkdhn.devicetree.psi.DtsIncludeType
 import me.jkdhn.devicetree.psi.DtsMacroType
 import me.jkdhn.devicetree.psi.DtsPreErrorType
 import me.jkdhn.devicetree.psi.DtsPreErrorTypes
+import me.jkdhn.devicetree.psi.DtsPreReferenceType
 import me.jkdhn.devicetree.psi.DtsPreType
 import me.jkdhn.devicetree.psi.DtsPreTypes
 import me.jkdhn.devicetree.psi.DtsTypes
@@ -92,7 +93,8 @@ class DtsPreLexer(
             subLexer.advance()
         }
 
-        advanceAs(baseLexer, PREPROCESSOR_DIRECTIVE)
+        advanceAs(baseLexer, DtsPreReferenceType(DtsTypes.PRE_MACRO_MARKER, baseLexer.tokenText))
+        advanceLexer(baseLexer)
     }
 
     private fun skipUntil(baseLexer: Lexer, vararg until: IElementType) {
@@ -157,6 +159,7 @@ class DtsPreLexer(
             value = content.substring(space + 1)
         }
         context.define(key, value)
+        advanceAs(baseLexer, DtsPreReferenceType(DtsTypes.PRE_DEFINE_MARKER, baseLexer.tokenText))
     }
 
     private fun handleUndefine(baseLexer: Lexer, content: String?) {

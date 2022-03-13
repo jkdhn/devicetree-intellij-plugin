@@ -53,7 +53,7 @@ class DtsSyntaxHighlighter : SyntaxHighlighterBase() {
             DtsTypes.BRACE_LEFT, DtsTypes.BRACE_RIGHT -> BRACES_KEYS
             DtsParserDefinition.LINE_COMMENT -> LINE_COMMENT_KEYS
             DtsParserDefinition.BLOCK_COMMENT -> BLOCK_COMMENT_KEYS
-            is DtsPreType, is DtsPreErrorType -> PREPROCESSOR_DIRECTIVE_KEYS
+            DtsTypes.PRE_MACRO_MARKER, is DtsPreType, is DtsPreErrorType -> PREPROCESSOR_DIRECTIVE_KEYS
             DtsParserDefinition.DISABLED_BRANCH -> DISABLED_BRANCH_KEYS
             DtsTypes.STRING -> STRING_KEYS
             DtsTypes.INTEGER -> NUMBER_KEYS

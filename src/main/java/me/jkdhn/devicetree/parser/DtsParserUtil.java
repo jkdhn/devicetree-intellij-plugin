@@ -13,6 +13,6 @@ public class DtsParserUtil extends GeneratedParserUtilBase {
     public static PsiBuilder adapt_builder_(IElementType root, PsiBuilder builder, PsiParser parser, TokenSet[] extendsSets) {
         ErrorState state = new ErrorState();
         ErrorState.initState(state, builder, root, extendsSets);
-        return new DtsBuilderAdapter(builder, state, parser);
+        return new DtsPreBuilderAdapter(builder, state, parser);
     }
 }

@@ -26,6 +26,8 @@
             implementationClass="me.jkdhn.devicetree.DtsFindUsagesProvider" />
         <lang.refactoringSupport language="DeviceTree"
             implementationClass="me.jkdhn.devicetree.DtsRefactoringSupportProvider" />
+        <lang.documentationProvider language="DeviceTree"
+            implementationClass="me.jkdhn.devicetree.DtsDocumentationProvider" />
         <colorSettingsPage implementation="me.jkdhn.devicetree.DtsColorSettingsPage" />
     </extensions>
 </idea-plugin>
