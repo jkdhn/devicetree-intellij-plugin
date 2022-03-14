@@ -15,6 +15,7 @@ repositories {
 }
 
 dependencies {
+    testImplementation(kotlin("test"))
 }
 
 intellij {
@@ -70,6 +71,10 @@ tasks {
 
     buildSearchableOptions {
         enabled = false
+    }
+
+    test {
+        useJUnitPlatform()
     }
 }
 

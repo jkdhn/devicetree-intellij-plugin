@@ -15,7 +15,7 @@ import me.jkdhn.devicetree.psi.DtsIncludeType
 import me.jkdhn.devicetree.psi.DtsMacroType
 import me.jkdhn.devicetree.psi.DtsTypes
 
-class DtsPreLexer(
+open class DtsPreLexer(
     private val file: DtsFile?,
     private val context: PreContext = PreContext(),
     private val depth: Int = 0
@@ -28,14 +28,7 @@ class DtsPreLexer(
         }
     }
 
-    private fun skipWhiteSpace(lexer: Lexer) {
-        while (lexer.tokenType == TokenType.WHITE_SPACE) {
-            advanceLexer(lexer)
-        }
-    }
-
     private fun handle(baseLexer: Lexer) {
-        System.err.println(baseLexer.tokenText.dropLast(1))
         val buffer = baseLexer.bufferSequence
         val start = baseLexer.tokenStart
         val end = baseLexer.tokenEnd
@@ -128,7 +121,7 @@ class DtsPreLexer(
         addToken(nameStart, PreTokenTypes.MACRO)
         addToken(nameEnd, PreTokenTypes.MACRO_NAME)
         collector.apply(::addToken)
-        addToken(baseLexer.tokenStart, PreTokenTypes.END)
+        advanceAs(baseLexer, PreTokenTypes.END)
     }
 
     private fun collectParameters(
@@ -223,13 +216,8 @@ class DtsPreLexer(
             val type = lexer.tokenType
                 ?: break
             addToken(end, DtsIncludeType(type, lexer.tokenSequence))
-            System.err.println(type)
             lexer.advance()
         }
-    }
-
-    override fun addToken(endOffset: Int, type: IElementType?) {
-        super.addToken(endOffset, type)
     }
 
     private class TokenCollector {
