@@ -32,12 +32,9 @@ class DtsParserDefinition : ParserDefinition {
         @JvmField
         val PREPROCESSOR_DIRECTIVE = DtsTokenType("PREPROCESSOR_DIRECTIVE")
 
-        @JvmField
-        val PREPROCESSOR_MACRO = DtsTokenType("PREPROCESSOR_MACRO")
-
         val WHITE_SPACES = TokenSet.create(TokenType.WHITE_SPACE)
         val COMMENTS = TokenSet.create(
-            LINE_COMMENT, BLOCK_COMMENT, DISABLED_BRANCH, PREPROCESSOR_DIRECTIVE
+            LINE_COMMENT, BLOCK_COMMENT, DISABLED_BRANCH
         )
         val STRINGS = TokenSet.create(DtsTypes.STRING)
         val FILE = DtsFileElementType()

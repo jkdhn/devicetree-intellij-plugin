@@ -10,6 +10,8 @@ import me.jkdhn.devicetree.preprocessor.psi.PreTypes
 class DtsPreBuilderAdapter(
     builder: PsiBuilder, state: GeneratedParserUtilBase.ErrorState, parser: PsiParser
 ) : DtsBuilderAdapter(builder, state, parser) {
+    private var parsing = false
+
     override fun advanceLexer() {
         parseMacros()
         super.advanceLexer()
@@ -36,28 +38,37 @@ class DtsPreBuilderAdapter(
     }
 
     private fun parseMacros() {
-        if (delegate.tokenType == PreTokenTypes.HASH) {
-            val marker = mark()
-            super.advanceLexer() // skip hash
-            val type = delegate.tokenText?.let { PreTypes.getType(it) } // get type from directive
-            while (delegate.tokenType != PreTokenTypes.END) {
-                super.advanceLexer() // skip everything before end
-            }
-            // at end
-            if (type != null) {
-                marker.done(type)
-            } else {
-                marker.drop()
-            }
-            super.advanceLexer() // skip end
-        } else if (delegate.tokenType == PreTokenTypes.MACRO) {
-            val marker = mark()
-            while (delegate.tokenType != PreTokenTypes.END) {
-                super.advanceLexer() // skip everything before end
-            }
-            // at end
-            marker.done(PreTypes.MACRO)
-            super.advanceLexer() // skip end
+        if (parsing) {
+            return
         }
+        parsing = true
+        while (true) {
+            if (tokenType == PreTokenTypes.HASH) {
+                val marker = mark()
+                advanceLexer() // skip hash
+                val type = tokenText?.let { PreTypes.getType(it) } // get type from directive
+                while (tokenType != PreTokenTypes.END) {
+                    advanceLexer() // skip everything before end
+                }
+                // at end
+                if (type != null) {
+                    marker.done(type)
+                } else {
+                    marker.drop()
+                }
+                advanceLexer() // skip end
+            } else if (tokenType == PreTokenTypes.MACRO) {
+                val marker = mark()
+                while (tokenType != PreTokenTypes.END) {
+                    advanceLexer() // skip everything before end
+                }
+                // at end
+                marker.done(PreTypes.MACRO)
+                advanceLexer() // skip end
+            } else {
+                break
+            }
+        }
+        parsing = false
     }
 }

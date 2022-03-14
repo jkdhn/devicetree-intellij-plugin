@@ -5,6 +5,7 @@ import com.intellij.lexer.LookAheadLexer
 import com.intellij.psi.PsiManager
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
+import com.intellij.util.indexing.IndexingDataKeys
 import me.jkdhn.devicetree.DtsIncludeResolver
 import me.jkdhn.devicetree.parser.DtsParserDefinition
 import me.jkdhn.devicetree.preprocessor.PreContext
@@ -185,7 +186,10 @@ open class DtsPreLexer(
                 PreTokenTypes.DEFINE_PARAMETER -> parameters!! += token.text
             }
         }
-        context.define(name!!, PreContext.Macro(value, parameters))
+        if (name == null) {
+            return
+        }
+        context.define(name, PreContext.Macro(value, parameters))
     }
 
     private fun handleInclude(end: Int, tokens: List<Token>) {
@@ -195,11 +199,17 @@ open class DtsPreLexer(
                 PreTokenTypes.INCLUDE_HEADER -> header = token.text
             }
         }
-        handleInclude(end, header!!)
+        if (header == null) {
+            return
+        }
+        handleInclude(end, header)
     }
 
     private fun handleInclude(end: Int, path: String) {
-        val virtualFile = file?.virtualFile
+        if (depth >= 15) {
+            return
+        }
+        val virtualFile = file?.originalFile?.virtualFile
         val resolved = DtsIncludeResolver.resolve(virtualFile, path)
         if (resolved != null) {
             val resolvedFile = PsiManager.getInstance(file!!.project).findFile(resolved) as? DtsFile

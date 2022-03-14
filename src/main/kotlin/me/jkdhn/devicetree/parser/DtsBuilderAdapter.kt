@@ -1,8 +1,8 @@
 package me.jkdhn.devicetree.parser
 
-import com.intellij.lang.ForeignLeafType
 import com.intellij.lang.PsiBuilder
 import com.intellij.lang.PsiParser
+import com.intellij.lang.TokenWrapper
 import com.intellij.lang.parser.GeneratedParserUtilBase
 import com.intellij.psi.tree.IElementType
 import me.jkdhn.devicetree.psi.DtsIncludeType
@@ -12,10 +12,11 @@ open class DtsBuilderAdapter(
     builder: PsiBuilder, state: GeneratedParserUtilBase.ErrorState, parser: PsiParser
 ) : GeneratedParserUtilBase.Builder(builder, state, parser) {
     private fun unwrap(type: IElementType?): IElementType? {
-        if (type is ForeignLeafType) {
-            return type.delegate
+        var result = type
+        while (result is TokenWrapper) {
+            result = result.delegate
         }
-        return type
+        return result
     }
 
     override fun getTokenType(): IElementType? {
@@ -33,7 +34,7 @@ open class DtsBuilderAdapter(
 
     override fun getTokenText(): String? {
         val type = super.getTokenType()
-        if (type is ForeignLeafType) {
+        if (type is TokenWrapper) {
             return type.value
         }
         return super.getTokenText()
