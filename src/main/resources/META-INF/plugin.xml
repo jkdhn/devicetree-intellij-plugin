@@ -28,6 +28,8 @@
             implementationClass="me.jkdhn.devicetree.DtsRefactoringSupportProvider" />
         <lang.documentationProvider language="DeviceTree"
             implementationClass="me.jkdhn.devicetree.DtsDocumentationProvider" />
+        <lang.commenter language="DeviceTree"
+            implementationClass="me.jkdhn.devicetree.DtsCommenter" />
         <colorSettingsPage implementation="me.jkdhn.devicetree.DtsColorSettingsPage" />
     </extensions>
 </idea-plugin>
