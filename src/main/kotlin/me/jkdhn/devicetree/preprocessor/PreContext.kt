@@ -1,23 +1,19 @@
 package me.jkdhn.devicetree.preprocessor
 
 class PreContext {
-    private val defines = mutableMapOf<String, String?>()
+    private val macros = mutableMapOf<String, Macro>()
 
-    fun define(key: String, value: String?) {
-        defines[key] = value
+    fun define(key: String, value: Macro) {
+        macros[key] = value
     }
 
     fun undefine(key: String): Boolean {
-        val existed = defines.containsKey(key)
-        defines.remove(key)
-        return existed
+        return macros.remove(key) != null
     }
 
-    fun isDefined(key: String): Boolean {
-        return defines.containsKey(key)
+    fun getMacro(key: String): Macro? {
+        return macros[key]
     }
 
-    fun getDefine(key: String): String? {
-        return defines[key]
-    }
+    data class Macro(val replacement: String?, val parameters: List<String>?)
 }

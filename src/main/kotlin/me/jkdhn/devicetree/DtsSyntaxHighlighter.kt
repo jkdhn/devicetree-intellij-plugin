@@ -8,8 +8,7 @@ import com.intellij.openapi.fileTypes.SyntaxHighlighterBase
 import com.intellij.psi.tree.IElementType
 import me.jkdhn.devicetree.lexer.DtsHighlightingLexer
 import me.jkdhn.devicetree.parser.DtsParserDefinition
-import me.jkdhn.devicetree.psi.DtsPreErrorType
-import me.jkdhn.devicetree.psi.DtsPreType
+import me.jkdhn.devicetree.preprocessor.psi.PreTokenType
 import me.jkdhn.devicetree.psi.DtsTypes
 
 class DtsSyntaxHighlighter : SyntaxHighlighterBase() {
@@ -53,7 +52,7 @@ class DtsSyntaxHighlighter : SyntaxHighlighterBase() {
             DtsTypes.BRACE_LEFT, DtsTypes.BRACE_RIGHT -> BRACES_KEYS
             DtsParserDefinition.LINE_COMMENT -> LINE_COMMENT_KEYS
             DtsParserDefinition.BLOCK_COMMENT -> BLOCK_COMMENT_KEYS
-            DtsTypes.PRE_MACRO_MARKER, is DtsPreType, is DtsPreErrorType -> PREPROCESSOR_DIRECTIVE_KEYS
+            DtsParserDefinition.PREPROCESSOR_DIRECTIVE -> PREPROCESSOR_DIRECTIVE_KEYS
             DtsParserDefinition.DISABLED_BRANCH -> DISABLED_BRANCH_KEYS
             DtsTypes.STRING -> STRING_KEYS
             DtsTypes.INTEGER -> NUMBER_KEYS

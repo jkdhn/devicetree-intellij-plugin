@@ -6,7 +6,6 @@ import com.intellij.lang.PsiParser
 import com.intellij.lang.parser.GeneratedParserUtilBase
 import com.intellij.psi.tree.IElementType
 import me.jkdhn.devicetree.psi.DtsIncludeType
-import me.jkdhn.devicetree.psi.DtsPreReferenceType
 import me.jkdhn.devicetree.psi.DtsMacroType
 
 open class DtsBuilderAdapter(
@@ -44,7 +43,6 @@ open class DtsBuilderAdapter(
         when (val old = super.getTokenType()) {
             is DtsIncludeType -> super.remapCurrentToken(DtsIncludeType(type, old.value))
             is DtsMacroType -> super.remapCurrentToken(DtsMacroType(type, old.value))
-            is DtsPreReferenceType -> super.remapCurrentToken(DtsPreReferenceType(type, old.value))
             else -> super.remapCurrentToken(type)
         }
     }

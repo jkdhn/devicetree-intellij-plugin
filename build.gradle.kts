@@ -1,3 +1,4 @@
+import org.jetbrains.grammarkit.tasks.GenerateLexerTask
 import org.jetbrains.grammarkit.tasks.GenerateParserTask
 
 plugins {
@@ -22,6 +23,13 @@ intellij {
 }
 
 tasks {
+    val generatePreLexer by registering(GenerateLexerTask::class) {
+        source.set("src/main/grammars/PreLexer.flex")
+        targetDir.set("src/main/gen/me/jkdhn/devicetree/lexer")
+        targetClass.set("_PreLexer")
+        purgeOldFiles.set(true)
+    }
+
     generateLexer {
         source.set("src/main/grammars/DtsLexer.flex")
         targetDir.set("src/main/gen/me/jkdhn/devicetree/lexer")
@@ -43,6 +51,7 @@ tasks {
         // bootstrap:
         //   * generateInitialParser (doesn't need compileKotlin)
         //   * generateLexer
+        //   * generatePreLexer
         //   * generateParser (includes compileKotlin)
     }
 

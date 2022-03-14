@@ -1,21 +1,18 @@
 package me.jkdhn.devicetree.lexer
 
-import com.intellij.lang.ForeignLeafType
 import com.intellij.lexer.Lexer
 import com.intellij.lexer.LookAheadLexer
+import com.intellij.psi.PsiManager
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
-import me.jkdhn.devicetree.parser.DtsParserDefinition.Companion.DISABLED_BRANCH
-import me.jkdhn.devicetree.parser.DtsParserDefinition.Companion.PREPROCESSOR_DIRECTIVE
+import me.jkdhn.devicetree.DtsIncludeResolver
+import me.jkdhn.devicetree.parser.DtsParserDefinition
 import me.jkdhn.devicetree.preprocessor.PreContext
+import me.jkdhn.devicetree.preprocessor.psi.PreTokenType
+import me.jkdhn.devicetree.preprocessor.psi.PreTokenTypes
 import me.jkdhn.devicetree.psi.DtsFile
 import me.jkdhn.devicetree.psi.DtsIncludeType
 import me.jkdhn.devicetree.psi.DtsMacroType
-import me.jkdhn.devicetree.psi.DtsPreErrorType
-import me.jkdhn.devicetree.psi.DtsPreErrorTypes
-import me.jkdhn.devicetree.psi.DtsPreReferenceType
-import me.jkdhn.devicetree.psi.DtsPreType
-import me.jkdhn.devicetree.psi.DtsPreTypes
 import me.jkdhn.devicetree.psi.DtsTypes
 
 class DtsPreLexer(
@@ -24,188 +21,232 @@ class DtsPreLexer(
     private val depth: Int = 0
 ) : LookAheadLexer(DtsFlexLexer()) {
     override fun lookAhead(baseLexer: Lexer) {
-        val type = baseLexer.tokenType
-        if (type is DtsPreType) {
-            handle(baseLexer, type)
-        } else if (type == DtsTypes.IDENTIFIER) {
-            handleIdentifier(baseLexer)
-        } else {
-            super.lookAhead(baseLexer)
+        when (baseLexer.tokenType) {
+            DtsParserDefinition.PREPROCESSOR_DIRECTIVE -> handle(baseLexer)
+            DtsTypes.IDENTIFIER -> handleIdentifier(baseLexer)
+            else -> super.lookAhead(baseLexer)
         }
     }
 
-    private fun skipWhiteSpace(baseLexer: Lexer) {
-        while (baseLexer.tokenType == TokenType.WHITE_SPACE) {
-            advanceLexer(baseLexer)
+    private fun skipWhiteSpace(lexer: Lexer) {
+        while (lexer.tokenType == TokenType.WHITE_SPACE) {
+            advanceLexer(lexer)
         }
     }
 
-    private fun handle(baseLexer: Lexer, type: DtsPreType) {
-        advanceAs(baseLexer, PREPROCESSOR_DIRECTIVE)
-        val content = if (baseLexer.tokenType == DtsPreTypes.CONTENT) baseLexer.tokenText.trim() else null
-        handle(baseLexer, type, content)
-    }
+    private fun handle(baseLexer: Lexer) {
+        System.err.println(baseLexer.tokenText.dropLast(1))
+        val buffer = baseLexer.bufferSequence
+        val start = baseLexer.tokenStart
+        val end = baseLexer.tokenEnd
 
-    private fun handle(baseLexer: Lexer, type: DtsPreType, content: String?) {
-        when (type) {
-            DtsPreTypes.IF -> {}
-            DtsPreTypes.IFDEF -> handleIfdef(baseLexer, content)
-            DtsPreTypes.IFNDEF -> handleIfndef(baseLexer, content)
-            DtsPreTypes.ELIF -> {}
-            DtsPreTypes.ELSE -> {}
-            DtsPreTypes.ENDIF -> {}
-            DtsPreTypes.INCLUDE -> handleInclude(baseLexer, content)
-            DtsPreTypes.DEFINE -> handleDefine(baseLexer, content)
-            DtsPreTypes.UNDEF -> handleUndefine(baseLexer, content)
-            DtsPreTypes.LINE -> {}
-            DtsPreTypes.ERROR -> {}
-            DtsPreTypes.PRAGMA -> {}
-            DtsPreTypes.CONTENT -> {}
-            DtsPreTypes.END -> {}
-        }
-        if (baseLexer.tokenType == DtsPreTypes.CONTENT) {
-            advanceAs(baseLexer, PREPROCESSOR_DIRECTIVE)
-        }
-        skipWhiteSpace(baseLexer)
-        if (baseLexer.tokenType == DtsPreTypes.END) {
-            advanceAs(baseLexer, TokenType.WHITE_SPACE)
-        }
-    }
+        val collector = TokenCollector()
 
-    private fun handleIdentifier(baseLexer: Lexer) {
-        val text = baseLexer.tokenText
-        if (!context.isDefined(text)) {
-            advanceLexer(baseLexer)
-            return
-        }
+        val subLexer = PreLexer()
+        subLexer.start(buffer, start, end - 1) // ignore trailing newline
 
-        val value = context.getDefine(text).orEmpty()
-
-        val subLexer = DtsFlexLexer()
-        subLexer.start(value)
-
-        while (true) {
-            val type = subLexer.tokenType
-                ?: break
-
-            addToken(baseLexer.tokenStart, DtsMacroType(type, subLexer.tokenText))
-
+        if (subLexer.tokenType == TokenType.WHITE_SPACE) {
+            collector.addToken(subLexer.tokenEnd, TokenType.WHITE_SPACE)
             subLexer.advance()
         }
 
-        advanceAs(baseLexer, DtsPreReferenceType(DtsTypes.PRE_MACRO_MARKER, baseLexer.tokenText))
-        advanceLexer(baseLexer)
+        assert(subLexer.tokenType == PreTokenTypes.HASH)
+        collector.addToken(subLexer.tokenEnd, PreTokenTypes.HASH)
+        subLexer.advance()
+
+        if (subLexer.tokenType == TokenType.WHITE_SPACE) {
+            collector.addToken(subLexer.tokenEnd, TokenType.WHITE_SPACE)
+            subLexer.advance()
+        }
+
+        assert(subLexer.tokenType == PreTokenTypes.DIRECTIVE)
+        collector.addToken(subLexer.tokenEnd, PreTokenTypes.DIRECTIVE)
+        val type = subLexer.tokenText
+        subLexer.advance()
+
+        val tokens = mutableListOf<Token>()
+        while (true) {
+            val tokenType = subLexer.tokenType
+                ?: break
+            if (tokenType is PreTokenType) {
+                tokens += Token(tokenType, subLexer.tokenText)
+            }
+            collector.addToken(subLexer.tokenEnd, tokenType)
+            subLexer.advance()
+        }
+
+        collector.addToken(end, PreTokenTypes.END)
+
+        when (type) {
+            "define" -> handleDefine(tokens)
+            "include" -> handleInclude(start, tokens)
+        }
+
+        collector.apply(::addToken)
+        baseLexer.advance()
     }
 
-    private fun skipUntil(baseLexer: Lexer, vararg until: IElementType) {
-        while (true) {
+    private fun handleIdentifier(baseLexer: Lexer) {
+        val nameStart = baseLexer.tokenStart
+        val nameEnd = baseLexer.tokenEnd
+        val text = baseLexer.tokenText
+        val macro = context.getMacro(text)
+        if (macro == null) {
+            advanceLexer(baseLexer)
+            return
+        }
+
+        val collector = TokenCollector()
+        val parameterReplacements = mutableMapOf<String, String>()
+        if (macro.parameters != null) {
+            val position = baseLexer.currentPosition
+            if (!collectParameters(baseLexer, parameterReplacements, macro.parameters, collector)) {
+                baseLexer.restore(position)
+                advanceLexer(baseLexer)
+                return
+            }
+        }
+
+        if (macro.replacement != null) {
+            val subLexer = DtsFlexLexer()
+            subLexer.start(macro.replacement)
+            while (true) {
+                val tokenType = subLexer.tokenType
+                    ?: break
+                var tokenText = subLexer.tokenText
+                if (tokenType == DtsTypes.IDENTIFIER) {
+                    val replacement = parameterReplacements[tokenText]
+                    if (replacement != null) {
+                        tokenText = replacement
+                    }
+                }
+                addToken(nameStart, DtsMacroType(tokenType, tokenText))
+                subLexer.advance()
+            }
+        }
+
+        addToken(nameStart, PreTokenTypes.MACRO)
+        addToken(nameEnd, PreTokenTypes.MACRO_NAME)
+        collector.apply(::addToken)
+        addToken(baseLexer.tokenStart, PreTokenTypes.END)
+    }
+
+    private fun collectParameters(
+        baseLexer: Lexer, output: MutableMap<String, String>, names: List<String>, collector: TokenCollector
+    ): Boolean {
+        baseLexer.advance() // skip name
+
+        if (baseLexer.tokenType != DtsTypes.PAR_LEFT) {
+            return false
+        }
+        collector.addToken(baseLexer.tokenEnd, PreTokenTypes.LPAR)
+        baseLexer.advance()
+
+        var level = 0
+        val currentText = StringBuilder()
+        val parameters = mutableListOf<String>()
+        while (level >= 0) {
             val type = baseLexer.tokenType
-            if (type == null || type in until) {
-                break
+                ?: return false
+            if (type == DtsTypes.PAR_LEFT) {
+                level++
+            } else if (type == DtsTypes.PAR_RIGHT) {
+                level--
+            }
+
+            if (level == 0 && type == DtsTypes.COMMA || level < 0) {
+                collector.addToken(baseLexer.tokenStart, PreTokenTypes.MACRO_PARAMETER)
+                if (type == DtsTypes.COMMA) {
+                    collector.addToken(baseLexer.tokenEnd, PreTokenTypes.COMMA)
+                } else {
+                    collector.addToken(baseLexer.tokenEnd, PreTokenTypes.RPAR)
+                }
+                parameters += currentText.toString()
+                currentText.clear()
+            } else {
+                currentText.append(baseLexer.bufferSequence, baseLexer.tokenStart, baseLexer.tokenEnd)
             }
             baseLexer.advance()
         }
+
+        if (parameters.size != names.size) {
+            return false
+        }
+
+        for (index in names.indices) {
+            output[names[index]] = parameters[index]
+        }
+
+        return true
     }
 
-    private fun skipConditionalBranch(baseLexer: Lexer) {
-        skipUntil(baseLexer, DtsPreTypes.ELSE, DtsPreTypes.ELIF, DtsPreTypes.ENDIF)
-        addToken(baseLexer.tokenStart, DISABLED_BRANCH)
-    }
-
-    private fun error(baseLexer: Lexer, type: DtsPreErrorType) {
-        advanceAs(baseLexer, type)
-    }
-
-    private fun handleIfdef(baseLexer: Lexer, content: String?) {
-        if (content == null) {
-            error(baseLexer, DtsPreErrorTypes.CONTENT_MISSING)
-            return
-        }
-
-        advanceAs(baseLexer, PREPROCESSOR_DIRECTIVE)
-
-        if (!context.isDefined(content)) {
-            skipConditionalBranch(baseLexer)
-        }
-    }
-
-    private fun handleIfndef(baseLexer: Lexer, content: String?) {
-        if (content == null) {
-            error(baseLexer, DtsPreErrorTypes.CONTENT_MISSING)
-            return
-        }
-
-        advanceAs(baseLexer, PREPROCESSOR_DIRECTIVE)
-
-        if (context.isDefined(content)) {
-            skipConditionalBranch(baseLexer)
-        }
-    }
-
-    private fun handleDefine(baseLexer: Lexer, content: String?) {
-        if (content == null) {
-            error(baseLexer, DtsPreErrorTypes.CONTENT_MISSING)
-            return
-        }
-
-        val space = content.indexOf(' ')
-        val key: String
-        val value: String?
-        if (space == -1) {
-            key = content
-            value = null
-        } else {
-            key = content.substring(0, space)
-            value = content.substring(space + 1)
-        }
-        context.define(key, value)
-        advanceAs(baseLexer, DtsPreReferenceType(DtsTypes.PRE_DEFINE_MARKER, baseLexer.tokenText))
-    }
-
-    private fun handleUndefine(baseLexer: Lexer, content: String?) {
-        if (content == null) {
-            error(baseLexer, DtsPreErrorTypes.CONTENT_MISSING)
-            return
-        }
-
-        if (!context.undefine(content)) {
-            error(baseLexer, DtsPreErrorTypes.UNDEFINE_NOT_FOUND)
-        }
-    }
-
-    private fun handleInclude(baseLexer: Lexer, content: String?) {
-        if (content == null) {
-            error(baseLexer, DtsPreErrorTypes.CONTENT_MISSING)
-            return
-        }
-
-        if (depth >= 15) {
-            return
-        }
-
-        val file = file?.parent?.findFile(content.substring(1, content.length - 1))
-        if (file !is DtsFile) {
-            error(baseLexer, DtsPreErrorTypes.INCLUDE_NOT_FOUND)
-            return
-        }
-
-        addToken(baseLexer.tokenStart, DtsIncludeType(TokenType.WHITE_SPACE, "\n"))
-
-        // Send the included file through a lexer
-        val includeLexer = DtsPreLexer(file, context, depth + 1)
-        includeLexer.start(file.text)
-        while (true) {
-            val type = includeLexer.tokenType
-                ?: break // done
-            when (type) {
-                is ForeignLeafType -> {
-                    addToken(baseLexer.tokenStart, type)
-                }
-                else -> {
-                    addToken(baseLexer.tokenStart, DtsIncludeType(type, includeLexer.tokenText))
-                }
+    private fun handleDefine(tokens: List<Token>) {
+        var name: String? = null
+        var value: String? = null
+        var parameters: MutableList<String>? = null
+        for (token in tokens) {
+            when (token.type) {
+                PreTokenTypes.DEFINE_IDENTIFIER -> name = token.text
+                PreTokenTypes.DEFINE_REPLACEMENT -> value = token.text
+                PreTokenTypes.LPAR -> parameters = mutableListOf()
+                PreTokenTypes.DEFINE_PARAMETER -> parameters!! += token.text
             }
-            includeLexer.advance()
+        }
+        context.define(name!!, PreContext.Macro(value, parameters))
+    }
+
+    private fun handleInclude(end: Int, tokens: List<Token>) {
+        var header: String? = null
+        for (token in tokens) {
+            when (token.type) {
+                PreTokenTypes.INCLUDE_HEADER -> header = token.text
+            }
+        }
+        handleInclude(end, header!!)
+    }
+
+    private fun handleInclude(end: Int, path: String) {
+        val virtualFile = file?.virtualFile
+        val resolved = DtsIncludeResolver.resolve(virtualFile, path)
+        if (resolved != null) {
+            val resolvedFile = PsiManager.getInstance(file!!.project).findFile(resolved) as? DtsFile
+            if (resolvedFile != null) {
+                handleInclude(end, resolvedFile)
+            }
         }
     }
+
+    private fun handleInclude(end: Int, resolvedFile: DtsFile) {
+        val lexer = DtsPreLexer(resolvedFile, context, depth + 1)
+        lexer.start(resolvedFile.text)
+        while (true) {
+            val type = lexer.tokenType
+                ?: break
+            addToken(end, DtsIncludeType(type, lexer.tokenSequence))
+            System.err.println(type)
+            lexer.advance()
+        }
+    }
+
+    override fun addToken(endOffset: Int, type: IElementType?) {
+        super.addToken(endOffset, type)
+    }
+
+    private class TokenCollector {
+        private val tokens = mutableListOf<CollectedToken>()
+
+        fun addToken(end: Int, type: IElementType) {
+            tokens += CollectedToken(end, type)
+        }
+
+        fun apply(processor: (Int, IElementType) -> Unit) {
+            for (token in tokens) {
+                processor(token.end, token.type)
+            }
+        }
+
+        private data class CollectedToken(val end: Int, val type: IElementType)
+    }
+
+    private data class Token(val type: PreTokenType, val text: String)
 }

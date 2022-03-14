@@ -11,6 +11,7 @@ import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IFileElementType
 import com.intellij.psi.tree.TokenSet
 import me.jkdhn.devicetree.lexer.DtsLexer
+import me.jkdhn.devicetree.preprocessor.psi.PreType
 import me.jkdhn.devicetree.psi.DtsElementFactory
 import me.jkdhn.devicetree.psi.DtsFile
 import me.jkdhn.devicetree.psi.DtsFileElementType
@@ -67,6 +68,9 @@ class DtsParserDefinition : ParserDefinition {
     }
 
     override fun createElement(node: ASTNode): PsiElement {
-        return DtsTypes.Factory.createElement(node)
+        return when (val type = node.elementType) {
+            is PreType -> type.createNode(node)
+            else -> DtsTypes.Factory.createElement(node)
+        }
     }
 }

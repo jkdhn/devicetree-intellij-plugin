@@ -17,6 +17,8 @@ jobs:
       run: ./gradlew generateInitialParser
     - name: Generate lexer
       run: ./gradlew generateLexer
+    - name: Generate preprocessor lexer
+      run: ./gradlew generatePreLexer
     - name: Generate parser
       run: ./gradlew generateParser
     - name: Build plugin
