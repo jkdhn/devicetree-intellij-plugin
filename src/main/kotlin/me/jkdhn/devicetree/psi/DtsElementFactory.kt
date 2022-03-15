@@ -16,6 +16,11 @@ object DtsElementFactory {
     }
 
     fun createIdentifier(project: Project, name: String): PsiElement {
-        return createLabelDefinition(project, name).node.findChildByType(DtsTypes.IDENTIFIER)!!.psi
+        val file = createDummyFile(project, "/dts-v1/; / { k = <$name")
+        return file.lastChild.lastChild
+    }
+
+    fun createLabelName(project: Project, name: String): PsiElement {
+        return createLabelDefinition(project, name).node.findChildByType(DtsTypes.LABEL_NAME)!!.psi
     }
 }

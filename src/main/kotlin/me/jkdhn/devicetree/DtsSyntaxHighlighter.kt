@@ -8,7 +8,6 @@ import com.intellij.openapi.fileTypes.SyntaxHighlighterBase
 import com.intellij.psi.tree.IElementType
 import me.jkdhn.devicetree.lexer.DtsHighlightingLexer
 import me.jkdhn.devicetree.parser.DtsParserDefinition
-import me.jkdhn.devicetree.preprocessor.psi.PreTokenType
 import me.jkdhn.devicetree.psi.DtsTypes
 
 class DtsSyntaxHighlighter : SyntaxHighlighterBase() {
@@ -33,6 +32,7 @@ class DtsSyntaxHighlighter : SyntaxHighlighterBase() {
         val SEMICOLON_KEYS = arrayOf(SEMICOLON)
         val LABEL_KEYS = arrayOf(LABEL)
         val NODE_NAME_KEYS = arrayOf(NODE_NAME)
+        val PROPERTY_NAME_KEYS = arrayOf(PROPERTY_NAME)
         val BRACES_KEYS = arrayOf(BRACES)
         val LINE_COMMENT_KEYS = arrayOf(LINE_COMMENT)
         val BLOCK_COMMENT_KEYS = arrayOf(BLOCK_COMMENT)
@@ -47,8 +47,9 @@ class DtsSyntaxHighlighter : SyntaxHighlighterBase() {
         return when (tokenType) {
             DtsTypes.HEADER_V1 -> HEADER_KEYS
             DtsTypes.SEMICOLON -> SEMICOLON_KEYS
-            DtsTypes.LABEL_REFERENCE, DtsTypes.LABEL_DEFINITION -> LABEL_KEYS
-            DtsTypes.IDENTIFIER -> NODE_NAME_KEYS
+            DtsTypes.LABEL_NAME, DtsTypes.AMPERSAND, DtsTypes.COLON -> LABEL_KEYS
+            DtsTypes.NODE_NAME, DtsTypes.AT, DtsTypes.UNIT_ADDRESS -> NODE_NAME_KEYS
+            DtsTypes.PROPERTY_NAME -> PROPERTY_NAME_KEYS
             DtsTypes.BRACE_LEFT, DtsTypes.BRACE_RIGHT -> BRACES_KEYS
             DtsParserDefinition.LINE_COMMENT -> LINE_COMMENT_KEYS
             DtsParserDefinition.BLOCK_COMMENT -> BLOCK_COMMENT_KEYS

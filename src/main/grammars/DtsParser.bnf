@@ -29,7 +29,9 @@
         SLASH = "/"
         STRING = "<string>"
         INTEGER = "<int>"
-        IDENTIFIER = "<identifier>"
+        NODE_NAME = "<node name>"
+        PROPERTY_NAME = "<property name>"
+        LABEL_NAME = "<label name>"
     ]
 }
 
@@ -37,7 +39,7 @@ File ::= Statement*
 
 Statement ::= ((HEADER_V1 | TreeNode | PropertyDefinition) SEMICOLON)
 
-LabelDefinition ::= IDENTIFIER COLON {
+LabelDefinition ::= LABEL_NAME COLON {
     mixin = "me.jkdhn.devicetree.psi.impl.DtsNamedElementImpl"
     implements = "me.jkdhn.devicetree.psi.DtsNamedElement"
     methods = [
@@ -47,16 +49,16 @@ LabelDefinition ::= IDENTIFIER COLON {
     ]
 }
 
-LabelReference ::= AMPERSAND IDENTIFIER {
+LabelReference ::= AMPERSAND LABEL_NAME {
     methods = [
         getReference
     ]
 }
 
 TreeNode ::= ((LabelDefinition* TreeNodeName) | LabelReference) BRACE_LEFT Statement* BRACE_RIGHT
-TreeNodeName ::= IDENTIFIER | SLASH
+TreeNodeName ::= (NODE_NAME (AT UNIT_ADDRESS)?) | SLASH
 
-PropertyDefinition ::= LabelDefinition* IDENTIFIER (EQ PropertyValue (COMMA PropertyValue)*)?
+PropertyDefinition ::= LabelDefinition* PROPERTY_NAME (EQ PropertyValue (COMMA PropertyValue)*)?
 PropertyValue ::= LabelDefinition* (PropertyValueCell | STRING | LabelReference) LabelDefinition*
 PropertyValueCell ::= LT PropertyValueCellEntry* LabelDefinition* GT
 private PropertyValueCellEntry ::= LabelDefinition* (LabelReference | PropertyValueExpression)

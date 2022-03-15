@@ -5,15 +5,15 @@ import com.intellij.testFramework.LexerTestCase
 
 internal class DtsPreLexerTest : LexerTestCase() {
     fun testDefine() {
-        doTest("#define NAME VALUE\n")
+        doTest("#define NAME 123\n")
     }
 
     fun testDefineAndUse() {
-        doTest("#define NAME VALUE\nNAME {};")
+        doTest("#define NAME 123\n/ { k = <NAME>; };")
     }
 
     fun testDefineAndUseWithParameters() {
-        doTest("#define NAME(p) PRE: p\nNAME(VALUE) {};")
+        doTest("#define MULTIPLY(a, b) ((a) * (b))\n/ { k = <MULTIPLY(3, 4)>; };")
     }
 
     fun testComplex() {

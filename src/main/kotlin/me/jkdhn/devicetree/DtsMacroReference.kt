@@ -25,7 +25,7 @@ class DtsMacroReference(
     }
 
     override fun handleElementRename(newElementName: String): PsiElement {
-        val oldName = element.lastChild
+        val oldName = element.firstChild
         val newName = DtsElementFactory.createIdentifier(element.project, newElementName)
         element.node.replaceChild(oldName.node, newName.node)
         return element

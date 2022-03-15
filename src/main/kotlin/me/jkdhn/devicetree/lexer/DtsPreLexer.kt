@@ -66,7 +66,7 @@ open class DtsPreLexer(
         }
 
         when (baseLexer.tokenType) {
-            DtsTypes.IDENTIFIER -> handleIdentifier(baseLexer)
+            PreTokenTypes.IDENTIFIER -> handleIdentifier(baseLexer)
             else -> super.lookAhead(baseLexer)
         }
     }
@@ -116,6 +116,7 @@ open class DtsPreLexer(
     }
 
     private fun handleIdentifier(baseLexer: Lexer) {
+        val state = baseLexer.state
         val nameStart = baseLexer.tokenStart
         val nameEnd = baseLexer.tokenEnd
         val text = baseLexer.tokenText
@@ -137,19 +138,31 @@ open class DtsPreLexer(
         }
 
         if (macro.replacement != null) {
+            // First pass: Identify parameters
             val subLexer = DtsFlexLexer()
-            subLexer.start(macro.replacement)
+            subLexer.start(macro.replacement, 0, macro.replacement.length, state)
+            val finalInput = StringBuilder()
             while (true) {
                 val tokenType = subLexer.tokenType
                     ?: break
                 var tokenText = subLexer.tokenText
-                if (tokenType == DtsTypes.IDENTIFIER) {
+                if (tokenType == PreTokenTypes.IDENTIFIER) {
                     val replacement = parameterReplacements[tokenText]
                     if (replacement != null) {
                         tokenText = replacement
                     }
                 }
-                addToken(nameStart, DtsMacroType(tokenType, tokenText))
+                finalInput.append(tokenText)
+                subLexer.advance()
+            }
+
+            // Second pass: Lex replacement
+            // TODO is calling start twice allowed? make a new lexer?
+            subLexer.start(finalInput, 0, finalInput.length, state)
+            while (true) {
+                val tokenType = subLexer.tokenType
+                    ?: break
+                addToken(nameStart, DtsMacroType(tokenType, subLexer.tokenSequence))
                 subLexer.advance()
             }
         }
@@ -172,31 +185,51 @@ open class DtsPreLexer(
         baseLexer.advance()
 
         var level = 0
-        val currentText = StringBuilder()
-        val parameters = mutableListOf<String>()
-        while (level >= 0) {
+        val start = baseLexer.tokenStart
+        while (true) {
             val type = baseLexer.tokenType
                 ?: return false
-            if (type == DtsTypes.PAR_LEFT) {
-                level++
-            } else if (type == DtsTypes.PAR_RIGHT) {
-                level--
+            when (type) {
+                DtsTypes.PAR_LEFT -> level++
+                DtsTypes.PAR_RIGHT -> level--
             }
-
-            if (level == 0 && type == DtsTypes.COMMA || level < 0) {
-                collector.addToken(baseLexer.tokenStart, PreTokenTypes.MACRO_PARAMETER)
-                if (type == DtsTypes.COMMA) {
-                    collector.addToken(baseLexer.tokenEnd, PreTokenTypes.COMMA)
-                } else {
-                    collector.addToken(baseLexer.tokenEnd, PreTokenTypes.RPAR)
-                }
-                parameters += currentText.toString()
-                currentText.clear()
-            } else {
-                currentText.append(baseLexer.bufferSequence, baseLexer.tokenStart, baseLexer.tokenEnd)
+            if (level < 0) {
+                break
             }
             baseLexer.advance()
         }
+        val end = baseLexer.tokenStart
+        return collectParameters(baseLexer.bufferSequence, start, end, output, names, collector)
+    }
+
+    private fun collectParameters(
+        buffer: CharSequence, start: Int, end: Int,
+        output: MutableMap<String, String>, names: List<String>, collector: TokenCollector
+    ): Boolean {
+        var level = 0
+        val current = StringBuilder()
+        val parameters = mutableListOf<String>()
+        for (index in start until end) {
+            val ch = buffer[index]
+            when (ch) {
+                '(' -> level++
+                ')' -> level--
+            }
+            if (level < 0) {
+                return false
+            }
+            if (level == 0 && ch == ',') {
+                collector.addToken(index, PreTokenTypes.MACRO_PARAMETER)
+                collector.addToken(index + 1, PreTokenTypes.COMMA)
+                parameters += current.toString()
+                current.clear()
+            } else {
+                current.append(ch)
+            }
+        }
+        parameters += current.toString()
+        collector.addToken(end, PreTokenTypes.MACRO_PARAMETER)
+        collector.addToken(end + 1, PreTokenTypes.RPAR)
 
         if (parameters.size != names.size) {
             return false

@@ -58,9 +58,6 @@ class DtsParserDefinition : ParserDefinition {
     override fun createFile(viewProvider: FileViewProvider) = DtsFile(viewProvider)
 
     override fun spaceExistenceTypeBetweenTokens(left: ASTNode, right: ASTNode): SpaceRequirements {
-        if (left.elementType == DtsTypes.IDENTIFIER && right.elementType == DtsTypes.COLON) {
-            return SpaceRequirements.MUST_NOT
-        }
         return SpaceRequirements.MAY
     }
 

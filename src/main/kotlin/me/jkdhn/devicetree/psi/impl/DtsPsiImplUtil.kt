@@ -10,25 +10,25 @@ import me.jkdhn.devicetree.psi.DtsLabelDefinition
 import me.jkdhn.devicetree.psi.DtsLabelReference
 import me.jkdhn.devicetree.psi.DtsTypes
 
-private fun getIdentifier(element: PsiElement): ASTNode? =
-    element.node.findChildByType(DtsTypes.IDENTIFIER)
+private fun getLabelName(element: PsiElement): ASTNode? =
+    element.node.findChildByType(DtsTypes.LABEL_NAME)
 
 fun getNameIdentifier(element: DtsLabelDefinition): PsiElement? =
-    getIdentifier(element)?.psi
+    getLabelName(element)?.psi
 
 fun getName(element: DtsLabelDefinitionImpl): String? =
-    getIdentifier(element)?.text
+    getLabelName(element)?.text
 
 fun setName(element: DtsLabelDefinition, name: String): PsiElement {
-    val oldName = getIdentifier(element)
+    val oldName = getLabelName(element)
     if (oldName != null) {
-        val newName = DtsElementFactory.createIdentifier(element.project, name).node
+        val newName = DtsElementFactory.createLabelName(element.project, name).node
         element.node.replaceChild(oldName, newName)
     }
     return element
 }
 
 fun getReference(element: DtsLabelReference): DtsLabelRef? {
-    val name = getIdentifier(element)?.psi ?: return null
+    val name = getLabelName(element)?.psi ?: return null
     return DtsLabelRef(element, name.textRangeInParent)
 }
