@@ -1,0 +1,23 @@
+#define ENABLED
+
+#ifdef ENABLED
+// evaluated
+#ifdef DISABLED
+// skipped
+#else
+// evaluated
+#endif
+// evaluated
+#else
+// skipped
+#endif
+
+/ {
+    device {
+        #ifdef ENABLE
+        status = "okay";
+        #else
+        status = "disabled";
+        #endif
+    }
+};

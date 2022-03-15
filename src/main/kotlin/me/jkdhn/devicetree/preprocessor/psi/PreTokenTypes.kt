@@ -50,5 +50,11 @@ object PreTokenTypes {
     val DEFINE_REPLACEMENT = PreTokenType("DEFINE_REPLACEMENT")
 
     @JvmField
+    val IFDEF_MACRO = PreTokenType("IFDEF_MACRO")
+
+    @JvmField
+    val IF_CONDITION = PreTokenType("IF_CONDITION")
+
+    @JvmField
     val END = PreTokenType("END")
 }

@@ -2,34 +2,76 @@ package me.jkdhn.devicetree.lexer
 
 import com.intellij.lexer.Lexer
 import com.intellij.lexer.LookAheadLexer
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
-import com.intellij.util.indexing.IndexingDataKeys
 import me.jkdhn.devicetree.DtsIncludeResolver
 import me.jkdhn.devicetree.parser.DtsParserDefinition
 import me.jkdhn.devicetree.preprocessor.PreContext
 import me.jkdhn.devicetree.preprocessor.psi.PreTokenType
 import me.jkdhn.devicetree.preprocessor.psi.PreTokenTypes
-import me.jkdhn.devicetree.psi.DtsFile
 import me.jkdhn.devicetree.psi.DtsIncludeType
 import me.jkdhn.devicetree.psi.DtsMacroType
 import me.jkdhn.devicetree.psi.DtsTypes
 
 open class DtsPreLexer(
-    private val file: DtsFile?,
+    private val file: PsiFile?,
     private val context: PreContext = PreContext(),
     private val depth: Int = 0
 ) : LookAheadLexer(DtsFlexLexer()) {
+    private val allowedInDisabledScope = listOf("if", "ifdef", "ifndef", "else", "elif", "endif")
+
     override fun lookAhead(baseLexer: Lexer) {
+        if (baseLexer.tokenType == null) {
+            super.lookAhead(baseLexer)
+            return
+        }
+
+        if (baseLexer.tokenType == DtsParserDefinition.PREPROCESSOR_DIRECTIVE) {
+            val directive = parseDirective(baseLexer)
+
+            val disabled = context.isInDisabledScope()
+            if (disabled && directive.type !in allowedInDisabledScope) {
+                advanceAs(baseLexer, DtsParserDefinition.DISABLED_BRANCH)
+                return
+            }
+
+            when (directive.type) {
+                "define" -> handleDefine(directive.tokens)
+                "include" -> handleInclude(baseLexer.tokenStart, directive.tokens)
+                "if" -> handleIf(directive.tokens)
+                "ifdef" -> handleIfdef(directive.tokens)
+                "ifndef" -> handleIfndef(directive.tokens)
+                "elif" -> handleElif(directive.tokens)
+                "else" -> handleElse(directive.tokens)
+                "endif" -> handleEndif()
+            }
+
+            if (context.isInDisabledScope() && disabled) {
+                // was in a disabled scope before and after this directive
+                // e.g. #ifdef inside a disabled scope
+                advanceAs(baseLexer, DtsParserDefinition.DISABLED_BRANCH)
+                return
+            }
+
+            directive.collector.apply(::addToken)
+            baseLexer.advance()
+            return
+        }
+
+        if (context.isInDisabledScope()) {
+            advanceAs(baseLexer, DtsParserDefinition.DISABLED_BRANCH)
+            return
+        }
+
         when (baseLexer.tokenType) {
-            DtsParserDefinition.PREPROCESSOR_DIRECTIVE -> handle(baseLexer)
             DtsTypes.IDENTIFIER -> handleIdentifier(baseLexer)
             else -> super.lookAhead(baseLexer)
         }
     }
 
-    private fun handle(baseLexer: Lexer) {
+    private fun parseDirective(baseLexer: Lexer): Directive {
         val buffer = baseLexer.bufferSequence
         val start = baseLexer.tokenStart
         val end = baseLexer.tokenEnd
@@ -70,14 +112,7 @@ open class DtsPreLexer(
         }
 
         collector.addToken(end, PreTokenTypes.END)
-
-        when (type) {
-            "define" -> handleDefine(tokens)
-            "include" -> handleInclude(start, tokens)
-        }
-
-        collector.apply(::addToken)
-        baseLexer.advance()
+        return Directive(type, tokens, collector)
     }
 
     private fun handleIdentifier(baseLexer: Lexer) {
@@ -212,14 +247,16 @@ open class DtsPreLexer(
         val virtualFile = file?.originalFile?.virtualFile
         val resolved = DtsIncludeResolver.resolve(virtualFile, path)
         if (resolved != null) {
-            val resolvedFile = PsiManager.getInstance(file!!.project).findFile(resolved) as? DtsFile
+            val resolvedFile = PsiManager.getInstance(file!!.project).findFile(resolved)
             if (resolvedFile != null) {
                 handleInclude(end, resolvedFile)
+                return
             }
         }
+        System.err.println("failed to resolve: $path")
     }
 
-    private fun handleInclude(end: Int, resolvedFile: DtsFile) {
+    private fun handleInclude(end: Int, resolvedFile: PsiFile) {
         val lexer = DtsPreLexer(resolvedFile, context, depth + 1)
         lexer.start(resolvedFile.text)
         while (true) {
@@ -228,6 +265,74 @@ open class DtsPreLexer(
             addToken(end, DtsIncludeType(type, lexer.tokenSequence))
             lexer.advance()
         }
+    }
+
+    private fun evaluateIf(condition: String): Boolean {
+        TODO()
+    }
+
+    private fun handleIf(tokens: List<Token>) {
+        var result = false
+        for (token in tokens) {
+            if (token.type == PreTokenTypes.IF_CONDITION) {
+                result = evaluateIf(token.text)
+            }
+        }
+
+        context.pushScope(PreContext.ConditionalScope(result, result))
+    }
+
+    private fun handleElif(tokens: List<Token>) {
+        val scope = context.getScope()
+        if (scope != null && scope.finished) {
+            context.replaceScope(PreContext.ConditionalScope(result = false, finished = true))
+            return
+        }
+
+        var result = false
+        for (token in tokens) {
+            if (token.type == PreTokenTypes.IF_CONDITION) {
+                result = evaluateIf(token.text)
+            }
+        }
+
+        context.replaceScope(PreContext.ConditionalScope(result, result))
+    }
+
+    private fun handleElse(tokens: List<Token>) {
+        val scope = context.getScope()
+        if (scope != null && scope.finished) {
+            context.replaceScope(PreContext.ConditionalScope(result = false, finished = true))
+            return
+        }
+
+        context.replaceScope(PreContext.ConditionalScope(result = true, finished = true))
+    }
+
+    private fun handleIfdef(tokens: List<Token>) {
+        var result = false
+        for (token in tokens) {
+            if (token.type == PreTokenTypes.IFDEF_MACRO) {
+                result = context.getMacro(token.text) != null
+            }
+        }
+
+        context.pushScope(PreContext.ConditionalScope(result, result))
+    }
+
+    private fun handleIfndef(tokens: List<Token>) {
+        var result = false
+        for (token in tokens) {
+            if (token.type == PreTokenTypes.IFDEF_MACRO) {
+                result = context.getMacro(token.text) == null
+            }
+        }
+
+        context.pushScope(PreContext.ConditionalScope(result, result))
+    }
+
+    private fun handleEndif() {
+        context.popScope()
     }
 
     private class TokenCollector {
@@ -247,4 +352,6 @@ open class DtsPreLexer(
     }
 
     private data class Token(val type: PreTokenType, val text: String)
+
+    private data class Directive(val type: String, val tokens: List<Token>, val collector: TokenCollector)
 }

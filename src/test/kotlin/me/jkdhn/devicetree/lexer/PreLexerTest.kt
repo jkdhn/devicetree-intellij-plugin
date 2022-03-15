@@ -2,8 +2,8 @@ package me.jkdhn.devicetree.lexer
 
 import com.intellij.psi.TokenType
 import me.jkdhn.devicetree.preprocessor.psi.PreTokenTypes
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.junit.Assert.assertEquals
+import org.junit.Test
 
 internal class PreLexerTest {
     @Test

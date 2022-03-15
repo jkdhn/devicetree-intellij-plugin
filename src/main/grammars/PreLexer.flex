@@ -34,12 +34,21 @@ IDENTIFIER = {IDENTIFIER_NONDIGIT} {IDENTIFIER_CHAR}*
 %state PRE_INCLUDE_H
 %state PRE_INCLUDE_Q
 
+%state PRE_IF
+
+%state PRE_IFDEF
+
+%state END
+
 %%
 
 <YYINITIAL> {
     "#"                             { return PreTokenTypes.HASH; }
     "define"                        { yybegin(PRE_DEFINE); return PreTokenTypes.DIRECTIVE; }
     "include"                       { yybegin(PRE_INCLUDE); return PreTokenTypes.DIRECTIVE; }
+    "if" | "elif"                   { yybegin(PRE_IF); return PreTokenTypes.DIRECTIVE; }
+    "ifdef" | "ifndef"              { yybegin(PRE_IFDEF); return PreTokenTypes.DIRECTIVE; }
+    "endif" | "else"                { yybegin(END); return PreTokenTypes.DIRECTIVE; }
     {WS}+                           { return TokenType.WHITE_SPACE; }
 }
 
@@ -63,7 +72,7 @@ IDENTIFIER = {IDENTIFIER_NONDIGIT} {IDENTIFIER_CHAR}*
 
 <PRE_DEFINE_REPLACEMENT> {
     {WS}+ / [^]*                    { return TokenType.WHITE_SPACE; }
-    [^]+                            { return PreTokenTypes.DEFINE_REPLACEMENT; }
+    [^]+                            { yybegin(END); return PreTokenTypes.DEFINE_REPLACEMENT; }
 }
 
 <PRE_INCLUDE> {
@@ -74,12 +83,25 @@ IDENTIFIER = {IDENTIFIER_NONDIGIT} {IDENTIFIER_CHAR}*
 
 <PRE_INCLUDE_H> {
     [^\n\>]+                        { return PreTokenTypes.INCLUDE_HEADER; }
-    \>                              { return PreTokenTypes.GT; }
+    \>                              { yybegin(END); return PreTokenTypes.GT; }
 }
 
 <PRE_INCLUDE_Q> {
     [^\n\"]+                        { return PreTokenTypes.INCLUDE_HEADER; }
-    \"                              { return PreTokenTypes.DQUOT; }
+    \"                              { yybegin(END); return PreTokenTypes.DQUOT; }
+}
+
+<PRE_IF> {
+    [^]+                            { return PreTokenTypes.IF_CONDITION; }
+}
+
+<PRE_IFDEF> {
+    {IDENTIFIER}                    { yybegin(END); return PreTokenTypes.IFDEF_MACRO; }
+    {WS}+                           { return TokenType.WHITE_SPACE; }
+}
+
+<END> {
+    {WS}+                           { return TokenType.WHITE_SPACE; }
 }
 
     [^]                             { return TokenType.BAD_CHARACTER; }

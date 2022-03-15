@@ -1,0 +1,9 @@
+/dts-v1/;
+
+/ {
+    key = "value", "another-value";
+
+    l1: child {
+        l2: k = <l3: &l1>;
+    };
+};

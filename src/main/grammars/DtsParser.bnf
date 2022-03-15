@@ -60,5 +60,5 @@ PropertyDefinition ::= LabelDefinition* IDENTIFIER (EQ PropertyValue (COMMA Prop
 PropertyValue ::= LabelDefinition* (PropertyValueCell | STRING | LabelReference) LabelDefinition*
 PropertyValueCell ::= LT PropertyValueCellEntry* LabelDefinition* GT
 private PropertyValueCellEntry ::= LabelDefinition* (LabelReference | PropertyValueExpression)
-PropertyValueExpression ::= INTEGER | (PAR_LEFT INTEGER PAR_RIGHT) | (PAR_LEFT PropertyValueExpression PropertyValueOperator PropertyValueExpression PAR_RIGHT)
+PropertyValueExpression ::= INTEGER | (PAR_LEFT PropertyValueExpression PAR_RIGHT) | (PAR_LEFT PropertyValueExpression PropertyValueOperator PropertyValueExpression PAR_RIGHT)
 PropertyValueOperator ::= ADD | SUB | MUL | SLASH

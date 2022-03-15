@@ -30,7 +30,7 @@ IDENTIFIER = [0-9a-zA-Z#?@,._+-]+
 
 PRE_DIRECTIVE = {WS}* "#" {WS}*
 //                (if|ifdef|ifndef|elif|else|endif|include|define|undef|line|error|pragma)
-                (if|include|define)
+                (if|ifdef|ifndef|elif|else|endif|include|define)
                 ([^\\\n] | (\\ [^]))* \n
 
 %%

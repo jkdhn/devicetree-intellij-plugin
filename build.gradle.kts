@@ -1,5 +1,6 @@
 import org.jetbrains.grammarkit.tasks.GenerateLexerTask
 import org.jetbrains.grammarkit.tasks.GenerateParserTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("org.jetbrains.intellij") version "1.4.0"
@@ -10,12 +11,13 @@ plugins {
 group = "me.jkdhn"
 version = "1.0-SNAPSHOT"
 
+val javaVersion = "11"
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
 }
 
 intellij {
@@ -24,6 +26,15 @@ intellij {
 }
 
 tasks {
+    withType<JavaCompile> {
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
+    }
+
+    withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = javaVersion
+    }
+
     val generatePreLexer by registering(GenerateLexerTask::class) {
         source.set("src/main/grammars/PreLexer.flex")
         targetDir.set("src/main/gen/me/jkdhn/devicetree/lexer")
@@ -71,10 +82,6 @@ tasks {
 
     buildSearchableOptions {
         enabled = false
-    }
-
-    test {
-        useJUnitPlatform()
     }
 }
 
