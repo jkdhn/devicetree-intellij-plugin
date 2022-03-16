@@ -1,8 +1,10 @@
 package me.jkdhn.devicetree
 
 import com.intellij.lang.documentation.AbstractDocumentationProvider
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import me.jkdhn.devicetree.preprocessor.psi.PreDefine
+import me.jkdhn.devicetree.preprocessor.psi.PreMacro
 
 class DtsDocumentationProvider : AbstractDocumentationProvider() {
     override fun generateDoc(element: PsiElement, originalElement: PsiElement?): String? {
@@ -12,7 +14,7 @@ class DtsDocumentationProvider : AbstractDocumentationProvider() {
         }
     }
 
-    private fun generateDefineDoc(element: PreDefine, originalElement: PsiElement?): String? {
+    private fun generateDefineDoc(element: PreDefine, originalElement: PsiElement?): String {
         val result = StringBuilder()
 
         result.append("<h1>")
@@ -31,7 +33,12 @@ class DtsDocumentationProvider : AbstractDocumentationProvider() {
         }
         result.append("</h1>\n")
 
-        result.append(element.getReplacement())
+        val macro = originalElement?.parent as? PreMacro
+        val replacement = if (macro != null) macro.getReplacement() else element.getReplacement()
+        if (replacement != null) {
+            result.append("Replacement:<br>\n")
+            result.append(StringUtil.escapeXmlEntities(replacement))
+        }
 
         return result.toString()
     }
