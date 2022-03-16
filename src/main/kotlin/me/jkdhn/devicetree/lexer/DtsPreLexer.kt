@@ -278,7 +278,7 @@ open class DtsPreLexer(
             return
         }
         val virtualFile = file?.originalFile?.virtualFile
-        val resolved = DtsIncludeResolver.resolve(virtualFile, path)
+        val resolved = DtsIncludeResolver.resolve(file?.project, virtualFile, path)
         if (resolved != null) {
             val resolvedFile = PsiManager.getInstance(file!!.project).findFile(resolved)
             if (resolvedFile != null) {
@@ -301,7 +301,8 @@ open class DtsPreLexer(
     }
 
     private fun evaluateIf(condition: String): Boolean {
-        TODO()
+        // TODO
+        return context.getMacro(condition) != null
     }
 
     private fun handleIf(tokens: List<Token>) {

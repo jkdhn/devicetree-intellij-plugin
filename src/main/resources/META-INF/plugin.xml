@@ -31,5 +31,10 @@
         <lang.commenter language="DeviceTree"
             implementationClass="me.jkdhn.devicetree.DtsCommenter" />
         <colorSettingsPage implementation="me.jkdhn.devicetree.DtsColorSettingsPage" />
+        <projectService serviceImplementation="me.jkdhn.devicetree.DtsProjectSettingsState" />
+        <projectConfigurable parentId="language"
+            instance="me.jkdhn.devicetree.DtsProjectSettingsConfigurable"
+            id="me.jkdhn.devicetree.DtsProjectSettingsConfigurable"
+            displayName="DeviceTree" />
     </extensions>
 </idea-plugin>
